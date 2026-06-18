@@ -9,10 +9,10 @@ Minimum supported Flax version: `1.12`.
 > This project works only on Windows and only on graphics api Directx12.
 
 > [!IMPORTANT]
-> FSR upscaler version 4 and frame generation (ml) is officially working only on Rx 9000 series (yet)
+> FSR upscaler version 4 and frame generation (ml) is officially working only on Rx 9000 series (yet).
 
 > [!IMPORTANT]
-> FSR upscaler version 4 and frame generation (ml) is officially working only on Rx 9000 series (yet)
+> Currently only Upscaler FSR is implemented.
 
 ## Installation
 
