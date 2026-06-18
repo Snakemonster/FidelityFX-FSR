@@ -24,30 +24,11 @@ bool FSRUpscale::Initialize(FSRSupport& support)
     return true;
 #endif
 
-    auto gpuDevice = GPUDevice::Instance;
-
-    auto result = ffx::ReturnCode::Error;
-    switch (gpuDevice->GetRendererType())
+    switch (GPUDevice::Instance->GetRendererType())
     {
     case RendererType::DirectX12:
-        {
-            ffx::CreateBackendDX12Desc createBackend { };
-            createBackend.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12;
-            createBackend.device = static_cast<ID3D12Device*>(gpuDevice->GetNativePtr());
-
-            ffx::CreateContextDescUpscale createUpscale{};
-            createUpscale.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE;
-#if BUILD_DEBUG || BUILD_DEVELOPMENT
-            createUpscale.fpMessage = &FSRUpscale::ffxDebugMessage;
-            createUpscale.flags = FFX_UPSCALE_ENABLE_DEBUG_CHECKING | FFX_UPSCALE_ENABLE_DEBUG_VISUALIZATION;
-            _debugView = true;
-#endif
-            createUpscale.maxRenderSize = FfxApiDimensions2D{3840, 2160};
-            createUpscale.maxUpscaleSize = FfxApiDimensions2D{3840, 2160};
-
-            result = ffx::CreateContext(_ffxContext, nullptr, createUpscale, createBackend);
-            break;
-        }
+        UpdateFSRContext();
+        break;
 #if GRAPHICS_API_VULKAN
     case RendererType::Vulkan:
         // Waiting until AMD finally add support for Vulkan...
@@ -55,18 +36,10 @@ bool FSRUpscale::Initialize(FSRSupport& support)
         return true;
 #endif
     default:
+        support = FSRSupport::NotSupportedRenderingBackend;
         return true;
     }
 
-    if (result == ffx::ReturnCode::Ok)
-    {
-        LOG(Info, "[FSR] ffx CreateContext is success");
-    }
-    else
-    {
-        LOG(Error, "[FSR] ffx CreateContext is failed");
-        return true;
-    }
     support = FSRSupport::Supported;
     FillUpscalerVersions();
     return false;
@@ -143,37 +116,15 @@ String FSRUpscale::GetUpscalerVersion() const
 
 void FSRUpscale::SetUpscalerVersion(String newVersion)
 {
-    //TODO seems like somewhere here is memory leak
     const auto newUpscalerId = _upscalerVersions.TryGet(newVersion);
     if (!newUpscalerId)
     {
         LOG(Error, "[FSR] Cannot find upscaler version of {}", newVersion);
         return;
     }
-
-    ffx::CreateBackendDX12Desc createBackend { };
-    createBackend.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12;
-    createBackend.device = static_cast<ID3D12Device*>(GPUDevice::Instance->GetNativePtr());
-
-    ffx::CreateContextDescUpscale createUpscale{};
-    createUpscale.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE;
-    createUpscale.fpMessage = &FSRUpscale::ffxDebugMessage;
-    createUpscale.flags = FFX_UPSCALE_ENABLE_DEBUG_CHECKING;
-    createUpscale.maxRenderSize = FfxApiDimensions2D{3840, 2160};
-    createUpscale.maxUpscaleSize = FfxApiDimensions2D{3840, 2160};
-
-    ffx::CreateContextDescOverrideVersion versionOverride {};
-    versionOverride.versionId = *newUpscalerId;
-    auto returnCode = ffx::CreateContext(_ffxContext, nullptr, createUpscale, createBackend, versionOverride);
-    if (returnCode == ffx::ReturnCode::Ok)
-    {
-        _selectedUpscalerVersion = newVersion;
-        LOG(Info, "[FSR] ffx Query get versionCount is success: version is {}", newVersion);
-    }
-    else
-    {
-        LOG(Error, "[FSR] ffx Query get versionCount failed");
-    }
+    _selectedUpscalerVersion = newVersion;
+    _selectedUpscalerId = *newUpscalerId;
+    UpdateFSRContext();
 }
 
 FSRQuality FSRUpscale::GetQuality() const
@@ -234,6 +185,40 @@ float FSRUpscale::GetUpscaleRatioFromQualityMode(const FSRQuality& quality)
     return outRatio;
 }
 
+void FSRUpscale::UpdateFSRContext()
+{
+    ffx::CreateBackendDX12Desc createBackend {};
+    createBackend.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12;
+    createBackend.device = static_cast<ID3D12Device*>(GPUDevice::Instance->GetNativePtr());
+
+    ffx::CreateContextDescUpscale createUpscale {};
+    createUpscale.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE;
+    createUpscale.flags = FFX_UPSCALE_ENABLE_AUTO_EXPOSURE | FFX_UPSCALE_ENABLE_DYNAMIC_RESOLUTION | FFX_UPSCALE_ENABLE_HIGH_DYNAMIC_RANGE;
+#if !BUILD_RELEASE
+    createUpscale.flags |= FFX_UPSCALE_ENABLE_DEBUG_CHECKING | FFX_UPSCALE_ENABLE_DEBUG_VISUALIZATION;
+    createUpscale.fpMessage = &FSRUpscale::ffxDebugMessage;
+#endif
+    createUpscale.maxRenderSize = FfxApiDimensions2D{3840, 2160};
+    createUpscale.maxUpscaleSize = FfxApiDimensions2D{3840, 2160};
+
+    ffx::CreateContextDescOverrideVersion versionOverride {};
+    versionOverride.header.type = FFX_API_DESC_TYPE_OVERRIDE_VERSION;
+    ffx::ReturnCode returnCode;
+    if (_selectedUpscalerVersion != String::Empty)
+    {
+        versionOverride.versionId = _selectedUpscalerId;
+        returnCode = ffx::CreateContext(_ffxContext, nullptr, createUpscale, createBackend, versionOverride);
+    }
+    else
+    {
+        returnCode = ffx::CreateContext(_ffxContext, nullptr, createUpscale, createBackend);
+    }
+    if (returnCode != ffx::ReturnCode::Ok)
+    {
+        LOG(Error, "[FSR] ffx create context failed");
+    }
+}
+
 void FSRUpscale::FillUpscalerVersions()
 {
     auto result = ffx::ReturnCode::Error;
@@ -259,6 +244,7 @@ void FSRUpscale::FillUpscalerVersions()
     }
 
     // Allocate storage
+    _upscalerVersions.Clear();
     Array<uint64_t> versionIds;
     Array<const char*> versionNames;
     versionIds.Resize(versionCount);
@@ -294,5 +280,5 @@ void FSRUpscale::FillUpscalerVersions()
 
 void FSRUpscale::ffxDebugMessage(uint32_t type, const wchar_t* message)
 {
-    LOG(Info, "[FSR] Message from ffxUpscale type: {}, message: {}", type, String(message));
+    LOG(Warning, "[FSR] Message from ffxUpscale type: {}, message: {}", type, String(message));
 }

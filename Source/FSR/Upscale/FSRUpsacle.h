@@ -22,9 +22,10 @@ protected:
 private:
     ffx::Context _ffxContext;
 
-    bool _debugView = false;
+    bool _debugView = true;
     Dictionary<String, uint64_t> _upscalerVersions;
     String _selectedUpscalerVersion;
+    uint64_t _selectedUpscalerId;
     FSRQuality _quality = FSRQuality::NativeAA;
 
 public:
@@ -78,6 +79,7 @@ public:
 
 protected:
 private:
+    void UpdateFSRContext();
     void FillUpscalerVersions();
     static void ffxDebugMessage(uint32_t type, const wchar_t* message);
 };

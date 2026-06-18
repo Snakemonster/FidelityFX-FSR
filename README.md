@@ -34,7 +34,7 @@ You can download this plugin in two ways:
         "Name": "$(EnginePath)/Flax.flaxproj"
     },
     {
-        "Name": "$(ProjectPath)/Plugins/FidelityFX-FSR/FidelityFX-FSR.flaxproj"
+        "Name": "$(ProjectPath)/Plugins/FidelityFX-FSR/FSR.flaxproj"
     }
 ]
 ```
