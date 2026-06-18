@@ -1,14 +1,28 @@
 # AMD FidelityFX Super Resolution for Flax Engine
-
-![AMD FidelityFX Super Resolution for Flax Engine](amd-fsr-flax.png)
+![img.png](amd-fsr-flax.png)
 
 [AMD Fidelity FX Super Resolution](https://gpuopen.com/fidelityfx-superresolution/) is a cutting edge super-optimize spatial upsampling technology that produces impressive image quality at fast framerates. This repository contains a plugin project for [Flax Engine](https://flaxengine.com/) games with FSR.
 
-Minimum supported Flax version: `1.2`.
+Minimum supported Flax version: `1.12`.
+
+> [!IMPORTANT]
+> This project works only on Windows and only on graphics api Directx12.
+
+> [!IMPORTANT]
+> FSR upscaler version 4 and frame generation (ml) is officially working only on Rx 9000 series (yet)
+
+> [!IMPORTANT]
+> FSR upscaler version 4 and frame generation (ml) is officially working only on Rx 9000 series (yet)
 
 ## Installation
 
-1. Clone repo into `<game-project>\Plugins\FidelityFX-FSR`
+You can download this plugin in two ways:
+### Automated git cloning 
+1. In Flax Editor click on **Tools** -> **Plugins** -> **Clone Project**
+2. In popup in field **Name**: `FSR` (or whatever you wanna call it), in field **Git Path**: `<link to this repo>`
+
+### Manual creation
+1. Clone repo into `<game-project>\Plugins\FSR`
 
 2. Add reference to FSR project in your game by modyfying your game `<game-project>.flaxproj` as follows:
 
@@ -24,21 +38,14 @@ Minimum supported Flax version: `1.2`.
     }
 ]
 ```
-
-3. Test it out!
-
-
-Finally open Flax Editor - FSR will be visible in Plugins window (under Rendering category). It implements `CustomUpscale` postFx to increase visual quality when using low-res rendering. To test it simply start the game and adjust the **Rendering Percentage** property in *Graphics Quality Window*. Use scale factors provided by AMD to achieve the best quality-performance ratio. 
-
-## API
-
-FSR is implemented as a `GamePlugin` and can be accessed as follows to configure effect:
-
+Test it out!
+## Usage
+Finally open Flax Editor - FSR will be visible in Plugins window (under Rendering category). It implements `CustomUpscale` postFx to increase visual quality when using low-res rendering. To test put lines below in your code:
 ```cs
-var postFx = PluginManager.GetPlugin<FSR>().PostFx;
-postFx.Enabled = true; // Enable/disable effect
-postFx.Sharpness = 0.25f; // Values in range 0-2 (0=max sharpness)
-MainRenderTask.Instance.RenderingPercentage = 0.67f; // Follow AMD docs for scaling factors
+AMD.FSR.Instance.ApplyUpscaler();
+AMD.FSR.Instance.Upscaler.Sharpness = 1.0f // in range from -1 to 1
+AMD.FSR.Instance.Upscaler.Quality = FSRQuality.Quality; // select from quality modes
+AMD.FSR.Instance.Upscaler.SetDebugView(false) // for debug view
 ```
 
 ## License

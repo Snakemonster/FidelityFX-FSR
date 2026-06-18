@@ -45,6 +45,8 @@ Thumbs.db
 *.log
 [Bb]in
 *.lib
+# only one lib shouldn't be ignored.
+!amd_fidelityfx_loader_dx12.lib
 *.sbr
 /Source/obj/
 _ReSharper*/
