@@ -42,7 +42,7 @@ void FSRPostFx::Render(GPUContext* context, RenderContext& renderContext, GPUTex
     }
 
     const auto fsr = FSR::GetInstance();
-    const Float2 pixelOffset(renderContext.View.TemporalAAJitter.X * renderContext.View.ScreenSize.X / 2.f, renderContext.View.TemporalAAJitter.X * renderContext.View.ScreenSize.Y / 2.f);
+    const Float2 pixelOffset(-2.f * renderContext.View.TemporalAAJitter.X / renderContext.View.ScreenSize.X, 2.f * renderContext.View.TemporalAAJitter.X / renderContext.View.ScreenSize.Y);
     fsr->_fsrUpscale->TemporalResolve(context, renderContext, input, fsrOutput, pixelOffset);
     if (fsrOutput != output)
     {

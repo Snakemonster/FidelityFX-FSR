@@ -17,7 +17,7 @@ public:
     /// <summary>
     /// Softening or sharpening factor to apply during the FSR pass. Negative values soften the image, positive values sharpen. In range [-1; 1].
     /// </summary>
-    API_FIELD(Attributes="Range(-1.0f, 1.0f)") float Sharpness = 1.0f;
+    API_FIELD(Attributes="Range(-1.0f, 1.0f)") float Sharpness = 0.0f;
 protected:
 private:
     ffx::Context _ffxContext;
@@ -74,8 +74,10 @@ public:
     /// </summary>
     API_FUNCTION() void SetDebugView(bool debugEnabled);
 
-    Int2 GetUpscaleResolutionFromQualityMode(API_PARAM(ref) const FSRQuality& quality, API_PARAM(ref) const Int2& dsrResolution);
-    float GetUpscaleRatioFromQualityMode(API_PARAM(ref) const FSRQuality& quality);
+    /// <summary>
+    /// Get render scale ratio from selected Quality mode 
+    /// </summary>
+    float GetUpscaleRatioFromQualityMode(const FSRQuality& quality);
 
 protected:
 private:

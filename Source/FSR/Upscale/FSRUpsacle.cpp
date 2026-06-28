@@ -48,16 +48,18 @@ bool FSRUpscale::Initialize(FSRSupport& support)
 void FSRUpscale::Shutdown()
 {
     ffx::DestroyContext(_ffxContext);
+    _ffxContext = nullptr;
     this->_upscalerVersions.Clear();
 }
 
 void FSRUpscale::TemporalResolve(GPUContext* context, RenderContext& renderContext, GPUTexture* input,
                                  GPUTexture* output, const Float2& pixelOffset)
 {
-    //TODO need to adjust some setting to remove giant pixelation on lower upscale quality and noise on NativeAA
+    //TODO noise on NativeAA
     const auto renderSize = input->Size();
     const auto upscaleSize = output->Size();
     const float sharpness = Math::Clamp(Sharpness, -1.0f, 1.0f);
+    ffx::ReturnCode retCode;
 
     // Since fsr only on D3D12
     context->SetResourceState(output, 0x8); // D3D12_RESOURCE_STATE_UNORDERED_ACCESS
@@ -70,10 +72,11 @@ void FSRUpscale::TemporalResolve(GPUContext* context, RenderContext& renderConte
     upscale.header.type = FFX_API_DISPATCH_DESC_TYPE_UPSCALE;
     upscale.commandList = (ID3D12GraphicsCommandList*)context->GetNativePtr();
 
-    upscale.color = ffxApiGetResourceDX12((ID3D12Resource*)input->GetNativePtr());
-    upscale.depth = ffxApiGetResourceDX12((ID3D12Resource*)renderContext.Task->Buffers->DepthBuffer->GetNativePtr());
-    upscale.motionVectors = ffxApiGetResourceDX12((ID3D12Resource*)(renderContext.Task->Buffers->MotionVectors ? renderContext.Task->Buffers->MotionVectors->GetNativePtr() : nullptr));
-    upscale.output = ffxApiGetResourceDX12((ID3D12Resource*)output->GetNativePtr());
+    upscale.color = ffxApiGetResourceDX12((ID3D12Resource*)input->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+    upscale.depth = ffxApiGetResourceDX12((ID3D12Resource*)renderContext.Task->Buffers->DepthBuffer->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+    //TODO this function returns nothing, something wrong with motion vectors
+    upscale.motionVectors = ffxApiGetResourceDX12((ID3D12Resource*)(renderContext.Task->Buffers->MotionVectors ? renderContext.Task->Buffers->MotionVectors->GetNativePtr() : nullptr), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+    upscale.output = ffxApiGetResourceDX12((ID3D12Resource*)output->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
 
     upscale.jitterOffset = { pixelOffset.X, pixelOffset.Y };
     upscale.motionVectorScale = { static_cast<float>(renderSize.X), static_cast<float>(renderSize.Y) };
@@ -92,8 +95,8 @@ void FSRUpscale::TemporalResolve(GPUContext* context, RenderContext& renderConte
 #if BUILD_DEVELOPMENT || BUILD_DEBUG
     if (_debugView) upscale.flags = FFX_UPSCALE_FLAG_DRAW_DEBUG_VIEW;
 #endif
-    auto result = ffx::Dispatch(_ffxContext, upscale);
-    if (result != ffx::ReturnCode::Ok)
+    retCode = ffx::Dispatch(_ffxContext, upscale);
+    if (retCode != ffx::ReturnCode::Ok)
     {
         LOG(Error, "[FSR] FSR is failed! Something gone wrong");
         return;
@@ -148,25 +151,6 @@ void FSRUpscale::SetQuality(const FSRQuality& quality)
 void FSRUpscale::SetDebugView(bool debugEnabled)
 {
     _debugView = debugEnabled;
-}
-
-Int2 FSRUpscale::GetUpscaleResolutionFromQualityMode(const FSRQuality& quality, const Int2& dsrResolution)
-{
-    uint32_t outHeight, outWidth;
-    ffx::QueryDescUpscaleGetRenderResolutionFromQualityMode getRenderResolution;
-    getRenderResolution.header.type = FFX_API_QUERY_DESC_TYPE_UPSCALE_GETRENDERRESOLUTIONFROMQUALITYMODE;
-    getRenderResolution.qualityMode = static_cast<uint32_t>(quality);
-    getRenderResolution.displayHeight = dsrResolution.X;
-    getRenderResolution.displayWidth = dsrResolution.Y;
-    getRenderResolution.pOutRenderHeight = &outHeight;
-    getRenderResolution.pOutRenderWidth = &outWidth;
-    auto result = ffx::Query(getRenderResolution);
-    if (result != ffx::ReturnCode::Ok)
-    {
-        LOG(Error, "[FSR] Failed to get render resolution with this quality mode!");
-        return Vector2Base<uint32_t>(0, 0);
-    }
-    return Vector2Base<uint32_t>(outHeight, outWidth);
 }
 
 float FSRUpscale::GetUpscaleRatioFromQualityMode(const FSRQuality& quality)
