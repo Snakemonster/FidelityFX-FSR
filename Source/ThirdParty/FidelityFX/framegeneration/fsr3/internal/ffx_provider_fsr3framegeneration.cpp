@@ -240,11 +240,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
         // Skip setting up the callback if no swapchain context notification is requested, this will avoid ABI checks and allow for run configure without swapchain
         if (!(config.flags & FFX_FRAMEGENERATION_FLAG_NO_SWAPCHAIN_CONTEXT_NOTIFY))
         {
-        #ifdef FFX_BACKEND_VK
-            FfxABIVersion version = FFX_ABI_VALID; // Feng, hack for now
-        #else
             FfxABIVersion version = internal_context->backendInterfaceFi.fpGetSwapchainABI(desc->swapChain);
-        #endif
             VERIFY(version != FfxABIVersion::FFX_ABI_INVALID && version != FfxABIVersion::FFX_ABI_OLD, FFX_API_RETURN_ERROR_RUNTIME_ERROR);
 
             config.frameGenerationCallback = nullptr;
@@ -259,7 +255,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         size_t callbacksIndex = desc->frameID % MAX_QUEUED_FRAMES;
                         InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
                         auto callbacks = &internal_context->callbacks[callbacksIndex];
-                        VERIFY(callbacks->frameGenerationCallback, FFX_ERROR_BACKEND_API_ERROR);
+                        VERIFY(callbacks->frameGenerationCallback, static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR));
                         
                         ffx::DispatchDescFrameGeneration dispatchDesc{};
                         
@@ -281,7 +277,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         dispatchDesc.frameID = desc->frameID;
                         
                         if (FFX_API_RETURN_OK != callbacks->frameGenerationCallback(&dispatchDesc, callbacks->frameGenerationCallbackUserContext))
-                            return FFX_ERROR_BACKEND_API_ERROR;
+                            return static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR);
                         return FFX_OK;
                     };
                 }
@@ -293,7 +289,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         size_t callbacksIndex = desc->frameID % MAX_QUEUED_FRAMES;
                         InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
                         auto callbacks = &internal_context->callbacks[callbacksIndex];
-                        VERIFY(callbacks->frameGenerationCallback, FFX_ERROR_BACKEND_API_ERROR);
+                        VERIFY(callbacks->frameGenerationCallback, static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR));
 
                         ffx::DispatchDescFrameGeneration dispatchDesc{};
 
@@ -315,7 +311,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         dispatchDesc.frameID = desc->frameID;
 
                         if (FFX_API_RETURN_OK != callbacks->frameGenerationCallback(&dispatchDesc, callbacks->frameGenerationCallbackUserContext))
-                            return FFX_ERROR_BACKEND_API_ERROR;
+                            return static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR);
                         return FFX_OK;
                     };
                 }
@@ -326,10 +322,10 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         size_t callbacksIndex = desc->frameID % MAX_QUEUED_FRAMES;
                         InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
                         auto callbacks = &internal_context->callbacks[callbacksIndex];
-                        VERIFY(callbacks->frameGenerationCallback, FFX_ERROR_BACKEND_API_ERROR);
+                        VERIFY(callbacks->frameGenerationCallback, static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR));
 
                         if (FFX_API_RETURN_OK != callbacks->frameGenerationCallback(desc, callbacks->frameGenerationCallbackUserContext))
-                            return FFX_ERROR_BACKEND_API_ERROR;
+                            return static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR);
                         return FFX_OK;
                     };
                 }
@@ -348,7 +344,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         size_t callbacksIndex = params->frameID % MAX_QUEUED_FRAMES;
                         InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
                         auto callbacks = &internal_context->callbacks[callbacksIndex];
-                        VERIFY(callbacks->presentCallback, FFX_ERROR_BACKEND_API_ERROR);
+                        VERIFY(callbacks->presentCallback, static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR));
                         
                         ffxCallbackDescFrameGenerationPresent cbDesc{};
                         cbDesc.header.pNext = nullptr;
@@ -363,7 +359,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         cbDesc.frameID = params->frameID;
 
                         if (FFX_API_RETURN_OK != callbacks->presentCallback(&cbDesc, callbacks->presentCallbackUserContext))
-                            return FFX_ERROR_BACKEND_API_ERROR;
+                            return static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR);
                         return FFX_OK;
                     };
                 }
@@ -375,7 +371,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         size_t callbacksIndex = params->frameID % MAX_QUEUED_FRAMES;
                         InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
                         auto callbacks = &internal_context->callbacks[callbacksIndex];
-                        VERIFY(callbacks->presentCallback, FFX_ERROR_BACKEND_API_ERROR);
+                        VERIFY(callbacks->presentCallback, static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR));
 
                         ffxCallbackDescFrameGenerationPresent cbDesc{};
                         cbDesc.header.pNext = nullptr;
@@ -390,7 +386,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         cbDesc.frameID = params->frameID;
 
                         if (FFX_API_RETURN_OK != callbacks->presentCallback(&cbDesc, callbacks->presentCallbackUserContext))
-                            return FFX_ERROR_BACKEND_API_ERROR;
+                            return static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR);
                         return FFX_OK;
                     };
                 }
@@ -401,10 +397,10 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                         size_t callbacksIndex = params->frameID % MAX_QUEUED_FRAMES;
                         InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
                         auto callbacks = &internal_context->callbacks[callbacksIndex];
-                        VERIFY(callbacks->presentCallback, FFX_ERROR_BACKEND_API_ERROR);
+                        VERIFY(callbacks->presentCallback, static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR));
 
                         if (FFX_API_RETURN_OK != callbacks->presentCallback(params, callbacks->presentCallbackUserContext))
-                            return FFX_ERROR_BACKEND_API_ERROR;
+                            return static_cast<ffxReturnCode_t>(FFX_ERROR_BACKEND_API_ERROR);
                         return FFX_OK;
                     };
                 }

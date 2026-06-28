@@ -1,8 +1,8 @@
-<!-- @page page_ffx-api Introduction to FSR™ API -->
+﻿<!-- @page page_ffx-api Introduction to AMD FSR™ API -->
 
 <h1>Introduction to the AMD FSR™ API</h1>
 
-The FSR™ API is a simple API designed with a small ABI surface and forward compatibility in mind. It is delivered in Dynamic Link Library form and consists of 5 functions, declared in [`ffx_api.h`](../../api/include/ffx_api.h):
+The AMD FSR™ API is a simple API designed with a small ABI surface and forward compatibility in mind. It is delivered in Dynamic Link Library form and consists of 5 functions, declared in [`ffx_api.h`](../../api/include/ffx_api.h):
 
 * `ffxCreateContext`
 * `ffxDestroyContext`
@@ -12,7 +12,7 @@ The FSR™ API is a simple API designed with a small ABI surface and forward com
 
 Arguments are passed via a linked list of descriptor structs. Each struct contains a header identifying its type and a pointer to the next struct.
 
-An application using the FSR™ API must use one of the provided signed DLLs. This can be loaded at runtime with `LoadLibrary` and `GetProcAddress` (this is recommended) or at application startup using the dynamic linker via the .lib file.
+An application using the AMD FSR™ API must use one of the provided signed DLLs. This can be loaded at runtime with `LoadLibrary` and `GetProcAddress` (this is recommended) or at application startup using the dynamic linker via the .lib file.
 
 Backend-specific functionality (currently only for DirectX 12) is only supported through the corresponding DLL.
 
@@ -23,10 +23,10 @@ Note that the helper functions wrapping API functions only work when linking usi
 Starting with AMD FSR™ SDK 2.0.0, the effects previously combined in amd_fidelityfx_dx12.dll are split into multiple DLLs based on effect type:
 
 * amd_fidelityfx_loader_dx12.dll: A small loader DLL, not containing any effect code. This DLL only manages the loading of effect type DLLs to provide the effects to the calling application. It is interface- and behavior-compatible with amd_fidelityfx_dx12.dll.
-* amd_fidelityfx_framegeneration_dx12.dll: This DLL contains providers for the latest FSR™ Frame Generation techniques, [FSR™ Frame Generation 4](../techniques/frame-interpolation-ml.md) and [FSR™ Frame Generation Swapchain 4](../techniques/frame-interpolation-swap-chain.md), as well as legacy ones, [FSR™ Frame Generation 3](../techniques/frame-interpolation.md) and [FSR™ Frame Generation Swapchain 3](../techniques/frame-interpolation-swap-chain.md).
-* amd_fidelityfx_upscaler_dx12.dll: This DLL contains providers for the latest FSR™ Upscaling technique ([FSR™ Super Resolution 4](../techniques/super-resolution-ml.md)) as well as legacy ones ([FSR™ Super Resolution 3](../techniques/super-resolution-upscaler.md) and [FSR™ Super Resolution 2](../techniques/super-resolution-temporal.md)).
-* amd_fidelityfx_denoiser_dx12.dll: This DLL contains the provider for the latest FSR™ Ray Regeneration technique [FSR™ Ray Regeneration 1](../techniques/denoising.md).
-* amd_fidelityfx_radiancecache_dx12.dll: This DLL contains the provider for the latest FSR™ Radiance Caching technique [FSR™ Radiance Caching (Preview)](../techniques/radiance-cache.md).
+* amd_fidelityfx_framegeneration_dx12.dll: This DLL contains providers for the latest AMD FSR™ Frame Generation techniques, [AMD FSR™ Frame Generation 4](../techniques/frame-interpolation-ml.md) and [AMD FSR™ Frame Generation Swapchain 4](../techniques/frame-interpolation-swap-chain.md), as well as legacy ones, [AMD FidelityFX™ Super Resolution Frame Generation 3](../techniques/frame-interpolation.md) and [AMD FidelityFX™ Super Resolution Frame Generation Swapchain 3](../techniques/frame-interpolation-swap-chain.md).
+* amd_fidelityfx_upscaler_dx12.dll: This DLL contains providers for the latest AMD FSR™ Upscaling technique ([AMD FSR™ Upscaling 4](../techniques/super-resolution-ml.md)) as well as legacy ones ([AMD FidelityFX™ Super Resolution 3](../techniques/super-resolution-upscaler.md) and [AMD FidelityFX™ Super Resolution 2](../techniques/super-resolution-temporal.md)).
+* amd_fidelityfx_denoiser_dx12.dll: This DLL contains the provider for the latest AMD FSR™ Ray Regeneration technique [AMD FSR™ Ray Regeneration 1](../techniques/denoising.md).
+* amd_fidelityfx_radiancecache_dx12.dll: This DLL contains the provider for the latest AMD FSR™ Radiance Caching technique [AMD FSR™ Radiance Caching (Preview)](../techniques/radiance-cache.md).
 
 This split allows applications to ship only the AMD FSR™ effect types they use.
 
@@ -79,7 +79,8 @@ Note that in the C++ wrapper, the allocator argument appears before the descript
 
 ```C++
 // equivalent of above, chain of createUpscale and createBackend will be linked automatically.
-ffxReturnCode_t retCode = ffx::ContextCreate(upscaleContext, nullptr, createUpscale, createBackend);
+ffx::Context upscaleContext = nullptr;
+ffx::ReturnCode retCode = ffx::CreateContext(upscaleContext, nullptr, createUpscale, createBackend);
 ```
 
 <h2>Context destruction</h2>
@@ -102,7 +103,21 @@ ffxReturnCode_t ffxQuery(ffxContext* context, ffxQueryDescHeader* desc);
 
 Output values will be returned by writing through pointers passed in the query descriptor.
 
-Some query descriptor types require passing valid context created by `ffxCreateContext`. 
+Only some query descriptor types support `ffxQuery(nullptr, ...)`. The currently supported public null-context queries are:
+
+* `ffxQueryDescGetVersions`
+* `ffxQueryDescUpscaleGetUpscaleRatioFromQualityMode`
+* `ffxQueryDescUpscaleGetRenderResolutionFromQualityMode`
+* `ffxQueryDescUpscaleGetJitterPhaseCount`
+* `ffxQueryDescUpscaleGetJitterOffset`
+* `ffxQueryDescUpscaleGetGPUMemoryUsageV2`
+* `ffxQueryDescUpscaleGetResourceRequirements`
+* `ffxQueryDescDenoiserGetGPUMemoryUsage`
+* `ffxQueryDescDenoiserGetVersion`
+* `ffxQueryDescFrameGenerationGetGPUMemoryUsageV2`
+* `ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12V2`
+
+All other query descriptor types require a valid context created by `ffxCreateContext`. 
 
 
 Example query for the version of an effect after context creation with default version from the SDK sample: 
@@ -114,6 +129,26 @@ ffxReturnCode_t retCode_t = ffxQuery(&m_UpscalingContext, &getVersion.header);
 ```
 
 Queries using a `NULL` context require additional input information like device, flags, and resolution.
+
+For null-context queries that don't embed a `device` field directly (e.g. `ffxQueryDescUpscaleGetUpscaleRatioFromQualityMode`), the device must be provided by chaining an `ffxCreateBackendDX12Desc` struct via `header.pNext`. This is necessary for the query to be routed to a driver/external provider. Without it, `ffxQuery` will return `FFX_API_RETURN_NO_PROVIDER` (4) and emit a debug error message.
+
+Example chaining `ffxCreateBackendDX12Desc` for a null-context query:
+
+```C
+ffxQueryDescUpscaleGetUpscaleRatioFromQualityMode ratioDesc = {0};
+ratioDesc.header.type = FFX_API_QUERY_DESC_TYPE_UPSCALE_GETUPSCALERATIOFROMQUALITYMODE;
+ratioDesc.qualityMode = FFX_UPSCALE_QUALITY_MODE_QUALITY;
+ratioDesc.pOutUpscaleRatio = &outRatio;
+
+struct ffxCreateBackendDX12Desc backendDesc = {0};
+backendDesc.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12;
+backendDesc.device = pD3D12Device;
+ratioDesc.header.pNext = &backendDesc.header;
+
+ffxReturnCode_t retCode = ffxQuery(nullptr, &ratioDesc.header);
+```
+
+Null-context query structs that already embed a `device` field (e.g. `ffxQueryDescUpscaleGetGPUMemoryUsageV2`, `ffxQueryDescGetVersions`) do not need this extra chaining.
 
 Example query for GPU memory usage of upscaler with default version before creating context from the SDK sample. 
 
@@ -129,7 +164,7 @@ upscalerGetGPUMemoryUsageV2.gpuMemoryUsageUpscaler = &gpuMemoryUsageUpscaler;
 
 ffxReturnCode_t retCode_t = ffxQuery(nullptr, &upscalerGetGPUMemoryUsageV2.header);
 
-CAUDRON_LOG_INFO(L"Default Upscaler Query GPUMemoryUsageV2 totalUsageInBytes %f ", gpuMemoryUsageUpscaler.totalUsageInBytes / 1048576.f);
+CAULDRON_LOG_INFO(L"Default Upscaler Query GPUMemoryUsageV2 totalUsageInBytes %f ", gpuMemoryUsageUpscaler.totalUsageInBytes / 1048576.f);
 ```
 
 If using C++ helper, need to omit the context argument if context is `NULL`.
@@ -191,13 +226,13 @@ CPU dispatches will usually execute their function synchronously and immediately
 
 <h2>Resource structs</h2>
 
-Resources like textures and buffers are passed to the FSR™ API using the `FfxApiResource` structure.
+Resources like textures and buffers are passed to the AMD FSR™ API using the `FfxApiResource` structure.
 
 For C++ applications, the backend headers define helper functions for constructing this from a native resource handle.
 
 <h2>Version selection</h2>
 
-FSR™ API supports overriding the version of each effect on context creation. This is an optional feature. If version overrides are used, they **must** be used consistently:
+AMD FSR™ API supports overriding the version of each effect on context creation. This is an optional feature. If version overrides are used, they **must** be used consistently:
 
 * Only use version IDs returned by `ffxQuery` in `ffxQueryDescGetVersions` with the appropriate creation struct type
 * Do not hard-code version IDs
@@ -247,7 +282,7 @@ You can query the version of any created context using `ffxQuery` with the `ffxQ
 
 <h2>Error handling</h2>
 
-All calls to the FSR™ API return a value of type `ffxReturnCode_t`. If using the C++ wrapper, this is replaced by `ffx::ReturnCode`.
+All calls to the AMD FSR™ API return a value of type `ffxReturnCode_t`. If using the C++ wrapper, this is replaced by `ffx::ReturnCode`.
 
 A successful operation will return `FFX_API_RETURN_OK`. All other return codes are errors. Future versions may add new return codes not yet present in the headers.
 
@@ -277,6 +312,6 @@ typedef struct ffxAllocationCallbacks
 } ffxAllocationCallbacks;
 ```
 
-`pUserData` is passed through to the callbacks without modification or validation. FSR™ API code will not attempt to dereference it, nor will it store it.
+`pUserData` is passed through to the callbacks without modification or validation. AMD FSR™ API code will not attempt to dereference it, nor will it store it.
 
 If a custom allocator is used for context creation, a compatible struct must be used for destruction. That means that any pointer allocated with the callbacks and user data during context creation must be deallocatable using the callback and user data passed to `ffxDestroyContext`.

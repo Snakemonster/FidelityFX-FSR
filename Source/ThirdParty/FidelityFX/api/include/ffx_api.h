@@ -85,6 +85,15 @@ struct ffxConfigureDescGlobalDebug1
     uint32_t               debugLevel;
 };
 
+#define FFX_API_CONFIGURE_DESC_TYPE_GLOBALDEBUG 7u
+struct ffxConfigureDescGlobalDebug
+{
+    ffxConfigureDescHeader header;
+    uint64_t               effectId;
+    ffxApiMessage          fpMessage;  ///< A pointer to a function that can receive messages from the runtime. May be null.
+    uint32_t               debugLevel;
+};
+
 #define FFX_API_QUERY_DESC_TYPE_GET_VERSIONS 4u
 struct ffxQueryDescGetVersions
 {

@@ -1044,6 +1044,7 @@ typedef struct FfxGpuJobDescription{
     {                                                \
         info[index].blobData,                        \
         info[index].blobSize,                        \
+        info[index].entryName,                       \
         info[index].numConstantBuffers,              \
         info[index].numSRVTextures,                  \
         info[index].numUAVTextures,                  \
@@ -1087,54 +1088,56 @@ typedef struct FfxGpuJobDescription{
 typedef struct FfxShaderBlob {
 
     const uint8_t* data;                                ///< A pointer to the blob
-    uint32_t  size;                                     ///< Size in bytes.
+    uint32_t       size;                                ///< Size in bytes.
 
-    uint32_t  cbvCount;                                 ///< Number of CBs.
-    uint32_t  srvTextureCount;                          ///< Number of SRV Textures.
-    uint32_t  uavTextureCount;                          ///< Number of UAV Textures.
-    uint32_t  srvBufferCount;                           ///< Number of SRV Buffers.
-    uint32_t  uavBufferCount;                           ///< Number of UAV Buffers.
-    uint32_t  samplerCount;                             ///< Number of Samplers.
-    uint32_t  rtAccelStructCount;                       ///< Number of RT Acceleration structures.
+    const char* entryName;                              ///< EntryPoint to the shader
+
+    uint32_t cbvCount;                                 ///< Number of CBs.
+    uint32_t srvTextureCount;                          ///< Number of SRV Textures.
+    uint32_t uavTextureCount;                          ///< Number of UAV Textures.
+    uint32_t srvBufferCount;                           ///< Number of SRV Buffers.
+    uint32_t uavBufferCount;                           ///< Number of UAV Buffers.
+    uint32_t samplerCount;                             ///< Number of Samplers.
+    uint32_t rtAccelStructCount;                       ///< Number of RT Acceleration structures.
 
     // constant buffers
-    const char** boundConstantBufferNames;
+    const char**    boundConstantBufferNames;
     const uint32_t* boundConstantBuffers;               ///< Pointer to an array of bound ConstantBuffers.
     const uint32_t* boundConstantBufferCounts;          ///< Pointer to an array of bound ConstantBuffer resource counts
     const uint32_t* boundConstantBufferSpaces;          ///< Pointer to an array of bound ConstantBuffer resource spaces
 
     // srv textures
-    const char** boundSRVTextureNames;
+    const char**    boundSRVTextureNames;
     const uint32_t* boundSRVTextures;                   ///< Pointer to an array of bound SRV resources.
     const uint32_t* boundSRVTextureCounts;              ///< Pointer to an array of bound SRV resource counts
     const uint32_t* boundSRVTextureSpaces;              ///< Pointer to an array of bound SRV resource spaces
 
     // uav textures
-    const char** boundUAVTextureNames;
+    const char**    boundUAVTextureNames;
     const uint32_t* boundUAVTextures;                   ///< Pointer to an array of bound UAV texture resources.
     const uint32_t* boundUAVTextureCounts;              ///< Pointer to an array of bound UAV texture resource counts
     const uint32_t* boundUAVTextureSpaces;              ///< Pointer to an array of bound UAV texture resource spaces
 
     // srv buffers
-    const char** boundSRVBufferNames;
+    const char**    boundSRVBufferNames;
     const uint32_t* boundSRVBuffers;                    ///< Pointer to an array of bound SRV buffer resources.
     const uint32_t* boundSRVBufferCounts;               ///< Pointer to an array of bound SRV buffer resource counts
     const uint32_t* boundSRVBufferSpaces;               ///< Pointer to an array of bound SRV buffer resource spaces
 
     // uav buffers
-    const char** boundUAVBufferNames;
+    const char**    boundUAVBufferNames;
     const uint32_t* boundUAVBuffers;                    ///< Pointer to an array of bound UAV buffer resources.
     const uint32_t* boundUAVBufferCounts;               ///< Pointer to an array of bound UAV buffer resource counts
     const uint32_t* boundUAVBufferSpaces;               ///< Pointer to an array of bound UAV buffer resource spaces
 
     // samplers
-    const char** boundSamplerNames;
+    const char**    boundSamplerNames;
     const uint32_t* boundSamplers;                      ///< Pointer to an array of bound sampler resources.
     const uint32_t* boundSamplerCounts;                 ///< Pointer to an array of bound sampler resource counts
     const uint32_t* boundSamplerSpaces;                 ///< Pointer to an array of bound sampler resource spaces
 
     // rt acceleration structures
-    const char** boundRTAccelerationStructureNames;
+    const char**    boundRTAccelerationStructureNames;
     const uint32_t* boundRTAccelerationStructures;      ///< Pointer to an array of bound UAV buffer resources.
     const uint32_t* boundRTAccelerationStructureCounts; ///< Pointer to an array of bound UAV buffer resource counts
     const uint32_t* boundRTAccelerationStructureSpaces; ///< Pointer to an array of bound UAV buffer resource spaces

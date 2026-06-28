@@ -1,6 +1,6 @@
 The following license applies to all files except as noted below. 
 
-Copyright (C) 2026  Advanced Micro Devices, Inc. All rights reserved. 
+Copyright (C) Advanced Micro Devices, Inc.
  
 REDISTRIBUTION: Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to install, reproduce, copy and distribute copies of the Software, in binary form only, and to permit persons to whom the Software is provided to do the same, provided that the following conditions are met: 
  
@@ -36,6 +36,7 @@ US$10.
 
 These source files 
 
+- `3rdpartynotice.md`
 - `ClearMediaCache.bat`
 - `docs\getting-started\building-samples.md`
 - `docs\getting-started\index.md`
@@ -463,10 +464,8 @@ These source files
 - `Kits\FidelityFX\docs\techniques\media\super-resolution-interpolation\06_FSR3_UiTex.svg`
 - `Kits\FidelityFX\docs\techniques\media\super-resolution-interpolation\07_FSR3_NoFG_UiTex.svg`
 - `Kits\FidelityFX\docs\techniques\media\super-resolution-interpolation\08_FSR3_HUDLess.svg`
-- `Kits\FidelityFX\docs\techniques\media\super-resolution-ml\fsr4-sample-resized.jpg`
 - `Kits\FidelityFX\docs\techniques\media\super-resolution-ml\fsr4-sample.jpg`
 - `Kits\FidelityFX\docs\techniques\media\super-resolution-ml\pipeline-placement.svg`
-- `Kits\FidelityFX\docs\techniques\media\super-resolution-ml\upscaler-debug-overlay.svg`
 - `Kits\FidelityFX\docs\techniques\media\super-resolution-temporal\fsr2-sample_resized.jpg`
 - `Kits\FidelityFX\docs\techniques\media\super-resolution-temporal\fsr2-sample.jpg`
 - `Kits\FidelityFX\docs\techniques\media\super-resolution-temporal\fsr3-sample_resized.jpg`
@@ -492,6 +491,7 @@ These source files
 - `Kits\FidelityFX\docs\whats-new\version_1_1.md`
 - `Kits\FidelityFX\docs\whats-new\version_2_0_0.md`
 - `Kits\FidelityFX\docs\whats-new\version_2_1_0.md`
+- `Kits\FidelityFX\docs\whats-new\version_2_2_0.md`
 - `Kits\FidelityFX\framegeneration\fsr3\dx12\antilag2\ffx_antilag2_dx12.h`
 - `Kits\FidelityFX\framegeneration\fsr3\dx12\BuildFrameInterpolationShaders.bat`
 - `Kits\FidelityFX\framegeneration\fsr3\dx12\BuildOpticalFlowShaders.bat`
@@ -687,6 +687,7 @@ These source files
 - `Kits\OpenSource\amd\ags\LICENSE.txt`
 - `Kits\OpenSource\amd\ags\README.md`
 - `Kits\OpenSource\amd\antilag2\ffx_antilag2_dx12.h`
+- `Kits\OpenSource\amd\antilag2\LICENSE.txt`
 - `Kits\OpenSource\amd\memoryallocator\D3D12MemAlloc.cpp`
 - `Kits\OpenSource\amd\memoryallocator\D3D12MemAlloc.h`
 - `Kits\OpenSource\amd\memoryallocator\license.txt`
@@ -740,6 +741,7 @@ These source files
 - `Kits\OpenSource\nlohmann\json.hpp`
 - `Kits\OpenSource\nlohmann\LICENSE.MIT`
 - `Kits\OpenSource\nlohmann\version.txt`
+- `Kits\OpenSource\stb\LICENSE.MIT`
 - `Kits\OpenSource\stb\stb_image_write.h`
 - `Kits\OpenSource\stb\stb_image.h`
 - `Kits\OpenSource\vectormath\common.hpp`
@@ -883,7 +885,7 @@ These source files
 are subject to the following license:   
  
 
-Copyright (C) 2026  Advanced Micro Devices, Inc. All rights reserved. 
+Copyright (C) Advanced Micro Devices, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: 
 

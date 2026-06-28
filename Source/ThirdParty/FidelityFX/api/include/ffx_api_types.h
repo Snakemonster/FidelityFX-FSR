@@ -229,3 +229,29 @@ typedef struct FfxApiConstantBufferAllocation
 /// @ingroup SDKTypes
 typedef FfxApiConstantBufferAllocation(*FfxApiConstantBufferAllocator)(void* data, const uint64_t dataSize);
 
+/// A 4-component floating point vector
+typedef struct FfxApiFloat4
+{
+    float x;
+    float y;
+    float z;
+    float w;
+} FfxApiFloat4;
+
+/// A 4x4 matrix in row-major layout with row-vector convention.
+/// This is the canonical format expected by FFX APIs.
+/// 
+/// Memory layout: rows[row_index][column_index]
+/// Mathematical convention: v * M (row vector multiplied by matrix)
+typedef struct FfxApiMatrix4x4
+{
+    FfxApiFloat4 rows[4];  ///< Four rows of the matrix. Access as rows[row].x, rows[row].y etc.
+} FfxApiMatrix4x4;
+
+/// An inclusive floating-point interval [min, max].
+/// Valid instances must satisfy min <= max.
+typedef struct FfxApiFloatBounds
+{
+    float min; ///< Lower bound of the interval.
+    float max; ///< Upper bound of the interval.
+} FfxApiFloatBounds;

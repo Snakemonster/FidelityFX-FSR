@@ -37,7 +37,7 @@
 
 #define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_VERSION_MAJOR    3
 #define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_VERSION_MINOR    1
-#define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_VERSION_PATCH    6
+#define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_VERSION_PATCH    7
 #define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK1 6
 #define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2 DXGI_MAX_SWAP_CHAIN_BUFFERS
 #define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_INTERPOLATION_OUTPUTS_COUNT 2
@@ -158,9 +158,10 @@ typedef TFrameInterpolationPresentInfo<32, FfxApiResource, FrameInterpolationPac
 // This type can be extended without breaking the ABI
 struct FrameinterpolationPresentInfoExt : public TFrameInterpolationPresentInfo<32, FfxApiResource, FrameInterpolationPacingDataExt>
 {
-    HANDLE waitableObjectSemaphoreHandle = 0;  // will be passed to app as waitableObject
-    HANDLE frameDoneEventHandle          = 0;  // event to notify the semaphore
-    HANDLE waitableThreadHandle          = 0;  // thread to update semaphore when event gets triggered by GPU
+    HANDLE waitableObjectSemaphoreHandle        = 0;  // will be passed to app as waitableObject
+    HANDLE frameDoneEventHandle                 = 0;  // event to notify the semaphore
+    HANDLE waitableThreadHandle                 = 0;  // thread to update semaphore when event gets triggered by GPU
+    volatile bool shutdownWaitableSignalThread  = false;
 };
 
 typedef struct ReplacementResource

@@ -275,6 +275,9 @@ FfxErrorCode ffxGetInterfaceDX12(
         backendInterface,
         FFX_ERROR_INVALID_POINTER);
     FFX_RETURN_ON_ERROR(
+        device,
+        FFX_ERROR_INVALID_POINTER);
+    FFX_RETURN_ON_ERROR(
         scratchBuffer,
         FFX_ERROR_INVALID_POINTER);
     FFX_RETURN_ON_ERROR(
@@ -323,9 +326,6 @@ FfxErrorCode ffxGetInterfaceDX12(
     FFX_RETURN_ON_ERROR(
         !backendContext->refCount,
         FFX_ERROR_BACKEND_API_ERROR);
-
-    // Clear everything out
-    memset(backendContext, 0, sizeof(*backendContext));
 
     // Set the device
     backendInterface->device = device;
@@ -1326,28 +1326,23 @@ FfxErrorCode CreateBackendContextDX12(FfxInterface* backendInterface, FfxEffect 
         uint32_t gpuJobDescArraySize = FFX_ALIGN_UP(backendContext->maxEffectContexts * FFX_MAX_GPU_JOBS * sizeof(FfxGpuJobDescription), sizeof(uint32_t));
         uint32_t resourceArraySize = FFX_ALIGN_UP(backendContext->maxEffectContexts * FFX_MAX_RESOURCE_COUNT * sizeof(BackendContext_DX12::Resource), sizeof(uint64_t));
         uint32_t stagingRingBufferArraySize = FFX_ALIGN_UP(backendContext->maxEffectContexts * FFX_CONSTANT_BUFFER_RING_BUFFER_SIZE, sizeof(uint32_t));
-        uint32_t contextArraySize = FFX_ALIGN_UP(backendContext->maxEffectContexts * sizeof(BackendContext_DX12::EffectContext), sizeof(uint32_t));
 
         uint8_t* pMem = (uint8_t*)((BackendContext_DX12*)(backendContext + 1));
 
         // Map gpu job array
         backendContext->pGpuJobs = (FfxGpuJobDescription*)pMem;
-        memset(backendContext->pGpuJobs, 0, gpuJobDescArraySize);
         pMem += gpuJobDescArraySize;
 
         // Map the resources
         backendContext->pResources = (BackendContext_DX12::Resource*)(pMem);
-        memset(backendContext->pResources, 0, resourceArraySize);
         pMem += resourceArraySize;
 
         // Map the staging buffer
         backendContext->pStagingRingBuffer = (uint8_t*)(pMem);
-        memset(backendContext->pStagingRingBuffer, 0, stagingRingBufferArraySize);
         pMem += stagingRingBufferArraySize;
 
         // Map the effect contexts
         backendContext->pEffectContexts = reinterpret_cast<BackendContext_DX12::EffectContext*>(pMem);
-        memset(backendContext->pEffectContexts, 0, contextArraySize);
 
         // CPUVisible
         D3D12_DESCRIPTOR_HEAP_DESC descHeap;
@@ -2812,7 +2807,6 @@ FfxErrorCode DestroyHeapDX12(FfxInterface* backendInterface, FfxResourceHeap hea
     }
 
     BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
-    ID3D12Device* dx12Device = reinterpret_cast<ID3D12Device*>(backendContext->device);
 
 	ID3D12Heap* dx12Heap = reinterpret_cast<ID3D12Heap*>(heap.heap);
 	if (dx12Heap)
@@ -3927,7 +3921,7 @@ static FfxErrorCode executeGpuJobCopy(BackendContext_DX12* backendContext, FfxGp
     return FFX_OK;
 }
 
-static FfxErrorCode executeGpuJobBarrier(BackendContext_DX12* backendContext, FfxGpuJobDescription* job, ID3D12GraphicsCommandList* dx12CommandList)
+static FfxErrorCode executeGpuJobBarrier(BackendContext_DX12* backendContext, FfxGpuJobDescription* job, ID3D12GraphicsCommandList*)
 {
     // Enqueue a barrier, but do not flush (all other GPU jobs have a flush as part of their logic)
     addBarrier(backendContext, job->barrierDescriptor.barrierType, &job->barrierDescriptor.resource, job->barrierDescriptor.newState);
@@ -3995,6 +3989,12 @@ FfxErrorCode ExecuteGpuJobsDX12(
 
     FfxErrorCode errorCode = FFX_OK;
 
+    // Wrap all the gpu jobs of the same effect to one event
+    if (backendContext->gpuJobCount)
+    {
+        BeginEventDX12(backendContext, effectContextId, dx12CommandList, GetEffectName(backendContext->pEffectContexts[effectContextId].effectId));
+    }
+
     // execute all GpuJobs
     for (uint32_t currentGpuJobIndex = 0; currentGpuJobIndex < backendContext->gpuJobCount; ++currentGpuJobIndex) {
 
@@ -4036,6 +4036,11 @@ FfxErrorCode ExecuteGpuJobsDX12(
         {
             EndEventDX12(backendContext, effectContextId, dx12CommandList);
         }
+    }
+
+    if (backendContext->gpuJobCount)
+    {
+        EndEventDX12(backendContext, effectContextId, dx12CommandList);
     }
 
     // check the execute function returned cleanly.

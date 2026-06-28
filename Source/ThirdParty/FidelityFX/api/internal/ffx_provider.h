@@ -119,14 +119,14 @@ inline ffxProvider* GetProvider(ffxStructType_t descType, uint64_t overrideId, v
 #if FFX_BACKEND_DX12
         if (extProviderSlot && extProviderSlot->Valid())
         {
-            if (extProviderSlot->GetId() == overrideId && extProviderSlot->CanProvide(descType))
+            if (extProviderSlot->GetId() == overrideId && extProviderSlot->CanProvide(descType) && extProviderSlot->IsSupported(device))
                 return &*extProviderSlot;
         }
 #endif
 
         for (auto provider : providers)
         {
-            if (provider->GetId() == overrideId && provider->CanProvide(descType))
+            if (provider->GetId() == overrideId && provider->CanProvide(descType) && provider->IsSupported(device))
                 return provider;
         }
     }
@@ -144,7 +144,7 @@ inline ffxProvider* GetProvider(ffxStructType_t descType, uint64_t overrideId, v
 
 #if FFX_BACKEND_DX12
         // we assume that external providers are vetted for hardware support by the driver, so no call to IsSupported.
-        if (extProviderSlot && extProviderSlot->Valid() && extProviderSlot->CanProvide(descType))
+        if (extProviderSlot && extProviderSlot->Valid() && extProviderSlot->CanProvide(descType) && extProviderSlot->IsSupported(device))
         {
             if (bestInternalProvider)
             {
@@ -199,7 +199,7 @@ inline uint64_t GetProviderVersions(ffxStructType_t descType, void* device, uint
 
     if (count < capacity)
     {
-        if (extProviderSlot->Valid() && extProviderSlot->CanProvide(descType))
+        if (extProviderSlot->Valid() && extProviderSlot->CanProvide(descType) && extProviderSlot->IsSupported(device))
         {
             bool add_to_list = true;
             auto index = count;

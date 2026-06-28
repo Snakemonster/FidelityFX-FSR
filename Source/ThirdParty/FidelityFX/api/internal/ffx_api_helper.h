@@ -23,6 +23,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <cstring>
 #include <utility>
 
 #include "../include/ffx_api.h"
@@ -33,8 +34,6 @@
 #include "../../framegeneration/include/ffx_framegeneration.h"
 #if defined(FFX_BACKEND_DX12)
 #include "../../framegeneration/include/dx12/ffx_api_framegeneration_dx12.h"
-#elif defined(FFX_BACKEND_VK)
-#include "../../framegeneration/include/vk/ffx_api_framegeneration_vk.h"
 #elif defined(FFX_BACKEND_XBOX)
 #include "../../framegeneration/include/xbox/ffx_api_framegeneration_xbox.h"
 #else
@@ -50,6 +49,9 @@
 
 #define VERIFY(_cond, _retcode) \
     if (!(_cond)) return _retcode
+
+#define VERIFY_MESSAGE(_cond, _retcode, _errcode, _msg) \
+    do { if (!(_cond)) { FFX_PRINT_MESSAGE(_errcode, _msg); return _retcode; } } while(0)
 
 #define TRY(_expr) \
     if (ffxReturnCode_t _rc = (_expr); _rc != FFX_API_RETURN_OK) return _rc
@@ -73,12 +75,26 @@ struct Allocator
 {
     const ffxAllocationCallbacks* cb;
 
-    void* alloc(size_t sz)
+    void* alloc(size_t sz, const bool zeroOutMemory = true)
     {
         if (cb)
-            return cb->alloc(cb->pUserData, static_cast<uint64_t>(sz));
+        {
+            void* ptr = cb->alloc(cb->pUserData, static_cast<uint64_t>(sz));
+            if (zeroOutMemory)
+                memset(ptr, 0, sz);
+            return ptr;
+        }
         else
-            return malloc(sz);
+        {
+            if (zeroOutMemory)
+            {
+                return calloc(1, sz);
+            }
+            else
+            {
+                return malloc(sz);
+            }
+        }
     }
 
     void dealloc(void* ptr)

@@ -30,7 +30,7 @@ extern "C" {
 
 #define FFX_UPSCALER_VERSION_MAJOR 4
 #define FFX_UPSCALER_VERSION_MINOR 1
-#define FFX_UPSCALER_VERSION_PATCH 0
+#define FFX_UPSCALER_VERSION_PATCH 1
 
 #define FFX_UPSCALER_MAKE_VERSION(major, minor, patch) (((major) << 22) | ((minor) << 12) | (patch))
 #define FFX_UPSCALER_VERSION                           FFX_UPSCALER_MAKE_VERSION(FFX_UPSCALER_VERSION_MAJOR, FFX_UPSCALER_VERSION_MINOR, FFX_UPSCALER_VERSION_PATCH)
@@ -193,7 +193,7 @@ struct ffxQueryDescUpscaleGetGPUMemoryUsage
 struct ffxQueryDescUpscaleGetGPUMemoryUsageV2
 {
     ffxQueryDescHeader              header;                  ///< Header descriptor, use type FFX_API_QUERY_DESC_TYPE_UPSCALE_GPU_MEMORY_USAGE_V2.
-    void*                           device;                  ///< For DX12: pointer to ID3D12Device. For VK, pointer to VkDevice. App needs to fill out before Query() call.
+    void*                           device;                  ///< For DX12: pointer to ID3D12Device. For VK, pointer to VkDeviceContext. App needs to fill out before Query() call.
     struct FfxApiDimensions2D       maxRenderSize;           ///< App needs to fill out before Query() call.
     struct FfxApiDimensions2D       maxUpscaleSize;          ///< App needs to fill out before Query() call.
     uint32_t                        flags;                   ///< Zero or a combination of values from FfxApiCreateContextUpscaleFlags. App needs to fill out before Query() call.

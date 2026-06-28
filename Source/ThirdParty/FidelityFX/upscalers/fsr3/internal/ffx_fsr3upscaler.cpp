@@ -569,7 +569,7 @@ static void getInternalResourceDescriptions(const FfxApiDimensions2D* maxRenderS
     internalResourceDescriptions->frameInfo = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32G32B32A32_FLOAT, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_FrameInfo", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_FRAME_INFO, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 }
 
-static void getSharedResourceDescriptions(const FfxApiDimensions2D* maxRenderSize, const FfxApiDimensions2D* maxUpscaleSize, FfxFsr3UpscalerSharedResourceDescriptions* sharedResourceDescriptions)
+static void getSharedResourceDescriptions(const FfxApiDimensions2D* maxRenderSize, const FfxApiDimensions2D*, FfxFsr3UpscalerSharedResourceDescriptions* sharedResourceDescriptions)
 {
     sharedResourceDescriptions->dilatedDepth = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_DilatedDepth", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_DILATED_DEPTH, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
@@ -590,10 +590,6 @@ static FfxErrorCode fsr3upscalerCreate(FfxFsr3UpscalerContext_Private* context, 
     context->device = contextDescription->backendInterface.device;
 
     memcpy(&context->contextDescription, contextDescription, sizeof(FfxFsr3UpscalerContextDescription));
-
-    // Check version info - make sure we are linked with the right backend version
-    FfxVersionNumber version = context->contextDescription.backendInterface.fpGetSDKVersion(&context->contextDescription.backendInterface);
-    FFX_RETURN_ON_ERROR(version == FFX_SDK_MAKE_VERSION(FFX_SDK_VERSION_MAJOR, FFX_SDK_VERSION_MINOR, FFX_SDK_VERSION_PATCH), FFX_ERROR_INVALID_VERSION);
 
     // Create the context.
     FfxErrorCode errorCode = context->contextDescription.backendInterface.fpCreateBackendContext(&context->contextDescription.backendInterface, FFX_EFFECT_FSR3UPSCALER, nullptr, &context->effectContextId);
@@ -887,8 +883,6 @@ static FfxErrorCode fsr3upscalerDispatch(FfxFsr3UpscalerContext_Private* context
 
     // Prepare per frame descriptor tables
     const bool isOddFrame = !!(context->resourceFrameIndex & 1);
-    const uint32_t currentCpuOnlyTableBase = isOddFrame ? FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_COUNT : 0;
-    const uint32_t currentGpuTableBase = 2 * FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_COUNT * context->resourceFrameIndex;
     const uint32_t accumulationSrvResourceIndex = isOddFrame ? FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_ACCUMULATION_2 : FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_ACCUMULATION_1;
     const uint32_t accumulationUavResourceIndex = isOddFrame ? FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_ACCUMULATION_1 : FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_ACCUMULATION_2;
     const uint32_t upscaledColorSrvResourceIndex = isOddFrame ? FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_INTERNAL_UPSCALED_COLOR_2 : FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_INTERNAL_UPSCALED_COLOR_1;
@@ -1196,15 +1190,18 @@ static FfxErrorCode fsr3upscalerDispatch(FfxFsr3UpscalerContext_Private* context
 #ifndef _GAMING_XBOX
     if (context->watermark)
     {
-        const char* message;
-        if (context->contextDescription.flags & FFX_FSR3UPSCALER_ENABLE_HIGH_DYNAMIC_RANGE)
-        {
-            message = "FSR3 Upscale\nBuild Time: " __DATE__ " " __TIME__ "\nGit branch: " GIT_COMMIT_SUBJECT "  commit: " GIT_HASH "\nColorspace: LINEAR";
-        }
-        else
-        {
-            message = "FSR3 Upscale\nBuild Time: " __DATE__ " " __TIME__ "\nGit branch: " GIT_COMMIT_SUBJECT "  commit: " GIT_HASH "\nColorspace: NON-LINEAR";
-        }
+#if defined(AMDXCFFX64)
+        const char* source = "Driver";
+#else
+        const char* source = "Local";
+#endif
+        const char* colorspace = (context->contextDescription.flags & FFX_FSR3UPSCALER_ENABLE_HIGH_DYNAMIC_RANGE) ? "LINEAR" : "NON-LINEAR";
+
+        char message[512];
+        snprintf(message, sizeof(message),
+            "FSR3 Upscale - Source: %s\nBuild Time: %s %s\nGit branch: %s  commit: %s\nColorspace: %s",
+            source, __DATE__, __TIME__, GIT_COMMIT_SUBJECT, GIT_HASH, colorspace);
+
         context->watermark->Dispatch(context->uavResources[FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_UPSCALED_OUTPUT], message);
     }
 #endif
@@ -1276,6 +1273,7 @@ FFX_API FfxErrorCode ffxFsr3UpscalerGetGpuMemoryUsage(FfxDevice device, FfxApiDi
 {
     FfxFsr3UpscalerInternalResourceDescriptions fsr3UpscalerResourceDescs = {};
     getInternalResourceDescriptions(maxRenderSize, maxUpscaleSize, &fsr3UpscalerResourceDescs);
+    
 
     // Array of pointers to each resource description member
     const FfxCreateResourceDescription* resources[] = {

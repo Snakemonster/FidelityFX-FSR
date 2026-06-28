@@ -137,6 +137,9 @@ namespace ffx
     struct struct_type<ffxConfigureDescGlobalDebug1> : std::integral_constant<uint64_t, FFX_API_CONFIGURE_DESC_TYPE_GLOBALDEBUG1> {};
 
     template<>
+    struct struct_type<ffxConfigureDescGlobalDebug> : std::integral_constant<uint64_t, FFX_API_CONFIGURE_DESC_TYPE_GLOBALDEBUG> {};
+
+    template<>
     struct struct_type<ffxOverrideVersion> : std::integral_constant<uint64_t, FFX_API_DESC_TYPE_OVERRIDE_VERSION> {};
 
     template<>
@@ -156,6 +159,9 @@ namespace ffx
     };
 
     struct ConfigureDescGlobalDebug1 : public InitHelper<ffxConfigureDescGlobalDebug1>
+    {};
+
+    struct ConfigureDescGlobalDebug : public InitHelper<ffxConfigureDescGlobalDebug>
     {};
 
     struct CreateContextDescOverrideVersion : public InitHelper<ffxOverrideVersion>

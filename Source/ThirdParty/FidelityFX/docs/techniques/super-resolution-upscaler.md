@@ -1,10 +1,10 @@
-<!-- @page page_techniques_super-resolution-upscaler AMD FidelityFX FSR Super Resolution 3.1.5 Upscaler -->
+﻿<!-- @page page_techniques_super-resolution-upscaler AMD FidelityFX™ Super Resolution 3.1.5 Upscaler -->
 
-<h1>AMD FidelityFX FSR Super Resolution 3.1.5</h1>
+<h1>AMD FidelityFX™ Super Resolution 3.1.5</h1>
 
 ![Screenshot](media/super-resolution-temporal/fsr3-sample.jpg "A screenshot showcasing the final output of the effect")
 
-AMD FidelityFX Super Resolution Upscaler is a high-quality solution for producing high resolution frames from lower resolution inputs using a state of the art ml-based algorithm.
+AMD FidelityFX™ Super Resolution Upscaler is a high-quality solution for producing high resolution frames from lower resolution inputs using a state of the art ml-based algorithm.
 
 <h2>Table of contents</h2>
 
@@ -57,10 +57,10 @@ FSR Super Resolution can enable "practical performance" for costly render operat
 
 <h2>Integration guidelines</h2>
 
-FidelityFX Super Resolution Upscaler requires integration using the [FidelityFX API](../getting-started/ffx-api.md).
+AMD FidelityFX™ Super Resolution Upscaler requires integration using the [AMD FidelityFX™ API](../getting-started/ffx-api.md).
 
 <h3>Scaling modes</h3>
-For the convenience of end users, the FidelityFX Upscale API provides a number of preset scaling ratios which are named.
+For the convenience of end users, the AMD FidelityFX™ Upscale API provides a number of preset scaling ratios which are named.
 
 | Quality           | Per-dimension scaling factor |
 |-------------------|------------------------------|
@@ -77,18 +77,18 @@ Depending on your target hardware and operating configuration FSR Super Resoluti
 
 
 <h3>Memory requirements</h3>
-Using FSR Super Resolution requires some additional GPU local memory to be allocated for consumption by the GPU. When using the FidelityFX Upscale API, this memory is allocated when the FSR Super Resolution context is created, and is done so via the series of callbacks which comprise the backend interface. This memory is used to store intermediate surfaces which are computed by the FSR Super Resolution algorithm as well as surfaces which are persistent across many frames of the application. The table below includes the amount of memory used by FSR Super Resolution under various operating conditions. 
+Using FSR Super Resolution requires some additional GPU local memory to be allocated for consumption by the GPU. When using the AMD FidelityFX™ Upscale API, this memory is allocated when the FSR Super Resolution context is created, and is done so via the series of callbacks which comprise the backend interface. This memory is used to store intermediate surfaces which are computed by the FSR Super Resolution algorithm as well as surfaces which are persistent across many frames of the application. The table below includes the amount of memory used by FSR Super Resolution under various operating conditions. 
 
 | Resolution | Quality                | Working set (MB) |
 | -----------|------------------------|------------------|
 | 3840x2160  | Quality (1.5x)         | 292MB            |
 |            | Balanced (1.7x)        | 256MB            |
 |            | Performance (2x)       | 226MB            |
-|            | Ultra performance (3x) |  58MB            |
+|            | Ultra performance (3x) | 176MB            |
 | 2560x1440  | Quality (1.5x)         | 134MB            |
 |            | Balanced (1.7x)        | 118MB            |
 |            | Performance (2x)       | 101MB            |
-|            | Ultra performance (3x) | 176MB            |
+|            | Ultra performance (3x) |  58MB            |
 | 1920x1080  | Quality (1.5x)         |  75MB            |
 |            | Balanced (1.7x)        |  65MB            |
 |            | Performance (2x)       |  61MB            |
@@ -120,7 +120,7 @@ All inputs that are provided at Render Resolution, except for motion vectors, sh
 
 <h3>Depth buffer configurations</h3>
 
-It is strongly recommended that an inverted, infinite depth buffer is used with FSR Super Resolution. However, alternative depth buffer configurations are supported. An application should inform the FidelityFX Upscale API of its depth buffer configuration by setting the appropriate flags during the creation of the [`ffxCreateContextDescUpscale`](../../upscalers/include/ffx_upscale.h#L72). The table below contains the appropriate flags.
+It is strongly recommended that an inverted, infinite depth buffer is used with FSR Super Resolution. However, alternative depth buffer configurations are supported. An application should inform the AMD FidelityFX™ Upscale API of its depth buffer configuration by setting the appropriate flags during the creation of the [`ffxCreateContextDescUpscale`](../../upscalers/include/ffx_upscale.h#L72). The table below contains the appropriate flags.
 
 | FSR Super Resolution flag                         | Note                                                                                       |
 |----------------------------------|--------------------------------------------------------------------------------------------|
@@ -157,7 +157,7 @@ FSR Super Resolution will perform better quality upscaling when more objects pro
 
 <h3>Reactive mask</h3>
 
-In the context of FSR Super Resolution, the term "reactivity" means how much influence the samples rendered for the current frame have over the production of the final upscaled image. Typically, samples rendered for the current frame contribute a relatively modest amount to the result computed by FSR Super Resolution; however, there are exceptions. To produce the best results for fast moving, alpha-blended objects, FSR Super Resolution requires the [Reproject & accumulate](#accumulate) stage to become more reactive for such pixels. As there is no good way to determine from either color, depth or motion vectors which pixels have been rendered using alpha blending, FSR Super Resolution performs best when applications explicitly mark such areas.
+In the context of FSR Super Resolution, the term "reactivity" means how much influence the samples rendered for the current frame have over the production of the final upscaled image. Typically, samples rendered for the current frame contribute a relatively modest amount to the result computed by FSR Super Resolution; however, there are exceptions. To produce the best results for fast moving, alpha-blended objects, FSR Super Resolution requires the [reactive mask](#reactive-mask) stage to become more reactive for such pixels. As there is no good way to determine from either color, depth or motion vectors which pixels have been rendered using alpha blending, FSR Super Resolution performs best when applications explicitly mark such areas.
 
 Therefore, it is strongly encouraged that applications provide a reactive mask to FSR Super Resolution. The reactive mask guides FSR Super Resolution on where it should reduce its reliance on historical information when compositing the current pixel, and instead allow the current frame's samples to contribute more to the final result. The reactive mask allows the application to provide a value from [0.0..1.0] where 0.0 indicates that the pixel is not at all reactive (and should use the default FSR Super Resolution composition strategy), and a value of 1.0 indicates the pixel should be fully reactive. This is a floating point range and can be tailored to different situations.
 
@@ -209,7 +209,7 @@ float ComputeAutoExposureFromAverageLog(float averageLogLuminance)
 
 The primary goal of FSR Super Resolution is to improve application rendering performance by using a temporal upscaling algorithm relying on a number of inputs. Therefore, its placement in the pipeline is key to ensuring the right balance between the highest quality visual quality and great performance.
 
-![alt text](media/super-resolution-temporal/pipeline-placement.svg "A diagram showing the placement of temporal FidelityFX Super Resolution in the wider rendering pipeline.")
+![alt text](media/super-resolution-temporal/pipeline-placement.svg "A diagram showing the placement of temporal AMD FidelityFX™ Super Resolution in the wider rendering pipeline.")
 
 With any image upscaling approach is it important to understand how to place other image-space algorithms with respect to the upscaling algorithm. Placing these other image-space effects before the upscaling has the advantage that they run at a lower resolution, which of course confers a performance advantage onto the application. However, it may not be appropriate for some classes of image-space techniques. For example, many applications may introduce noise or grain into the final image, perhaps to simulate a physical camera. Doing so before an upscaler might cause the upscaler to amplify the noise, causing undesirable artifacts in the resulting upscaled image. The following table divides common real-time image-space techniques into two columns. 'Post processing A' contains all the techniques which typically would run before FSR Super Resolution's upscaling, meaning they would all run at render resolution. Conversely, the 'Post processing B' column contains all the techniques which are recommend to run after FSR Super Resolution, meaning they would run at the larger, presentation resolution.
 
@@ -231,7 +231,7 @@ Temporal antialiasing (TAA) is a technique which uses the output of previous fra
 
 <h3>Camera jitter</h3>
 
-FSR Super Resolution relies on the application to apply sub-pixel jittering while rendering - this is typically included in the projection matrix of the camera. To make the application of camera jitter simple, the FidelityFX Upscale API provides a small set of utility function which computes the sub-pixel jitter offset for a particular frame within a sequence of separate jitter offsets.
+FSR Super Resolution relies on the application to apply sub-pixel jittering while rendering - this is typically included in the projection matrix of the camera. To make the application of camera jitter simple, the AMD FidelityFX™ Upscale API provides a small set of utility function which computes the sub-pixel jitter offset for a particular frame within a sequence of separate jitter offsets.
 
 Internally, these function implement a Halton[2,3] sequence [[Halton](#references)]. The goal of the Halton sequence is to provide spatially separated points, which cover the available space.
 
@@ -303,7 +303,7 @@ The following table illustrates the mipmap biasing factor which results from eva
 
 <h3>Frame Time Delta Input</h3>
 
-The FidelityFX Upscale API requires [`frameTimeDelta`](../../upscalers/include/ffx_upscale.h#L99) be provided by the application through the [`ffxDispatchDescUpscale`](../../upscalers/include/ffx_upscale.h#L82) structure. This value is in __milliseconds__: if running at 60fps, the value passed should be around __16.6f__.
+The AMD FidelityFX™ Upscale API requires [`frameTimeDelta`](../../upscalers/include/ffx_upscale.h#L99) be provided by the application through the [`ffxDispatchDescUpscale`](../../upscalers/include/ffx_upscale.h#L82) structure. This value is in __milliseconds__: if running at 60fps, the value passed should be around __16.6f__.
 
 The value is used within the temporal component of the FSR2 auto-exposure feature. This allows for tuning of the history accumulation for quality purposes.
 
@@ -335,12 +335,12 @@ The available keys are:
 <h3>Debug Checker</h3>
 Enable debug checker to validate application supplied inputs at dispatch upscale. This feature can be enabled in any build configuration of the runtime (IE. release binaries from PrebuiltSignedDll folder or debug build). It is recommended this is enabled only in development builds of game.
 
-Passing the [`FFX_UPSCALE_ENABLE_DEBUG_CHECKING`](../../upscalers/include/ffx_upscale.h#L49) flag within the flags member of [`ffxCreateContextDescUpscale`](../../upscalers/include/ffx_upscale.h#L72) will output textual warning messages from upscaler to debugger TTY by default. Application can set the callback fuction for runtime to pass the messages to the underlying application. Application can assign `fpMessage` from [`ffxCreateContextDescUpscale`](../../upscalers/include/ffx_upscale.h#L72) to suitable function. `fpMessage` is of type `ffxApiMessage` which is a function pointer for passing string messages of various types.
+Passing the [`FFX_UPSCALE_ENABLE_DEBUG_CHECKING`](../../upscalers/include/ffx_upscale.h#L49) flag within the flags member of [`ffxCreateContextDescUpscale`](../../upscalers/include/ffx_upscale.h#L72) will output textual warning messages from upscaler to debugger TTY by default. Application can set the callback function for runtime to pass the messages to the underlying application. Application can assign `fpMessage` from [`ffxCreateContextDescUpscale`](../../upscalers/include/ffx_upscale.h#L72) to suitable function. `fpMessage` is of type `ffxApiMessage` which is a function pointer for passing string messages of various types.
 
 An example of the kind of output that can occur when the checker observes possible issues is below:
 
 ```
-FSR_API_DEBUG_WARNING: FFX_FSR_ENABLE_DEPTH_INFINITE and FFX_FSR_ENABLE_DEPTH_INVERTED present, cameraFar value is very low which may result in depth separation artefacting
+FSR_API_DEBUG_WARNING: FFX_FSR_ENABLE_DEPTH_INFINITE and FFX_FSR_ENABLE_DEPTH_INVERTED present, cameraFar value is very low which may result in depth separation artifacting
 FSR_API_DEBUG_WARNING: frameTimeDelta is less than 1.0f - this value should be milliseconds (~16.6f for 60fps)
 ```
 <h3>Debug view</h3>
@@ -357,15 +357,14 @@ FSR Super Resolution requires a GPU with typed UAV load and R16G16B16A16_UNORM s
 
 | Version        | Date              |
 | ---------------|-------------------|
-| **3.0.1**      | 2023-11-28        |
-| **3.1.0**      | 2024-10-02        |
-| **3.1.2**      | 2024-10-31        |
-| **3.1.3**      | 2024-12-12        |
-| **3.1.4**      | 2025-05-08        |
 | **3.1.5**      | 2025-08-20        |
+| **3.1.4**      | 2025-05-08        |
+| **3.1.3**      | 2024-12-12        |
+| **3.1.2**      | 2024-10-31        |
+| **3.1.0**      | 2024-10-02        |
+| **3.0.1**      | 2023-11-28        |
 
 Refer to changelog for more detail on versions.
-
 
 <h2>References</h2>
 
@@ -380,5 +379,5 @@ Refer to changelog for more detail on versions.
 
 <h2>See also</h2>
 
-- [FidelityFX™ FSR Sample](../../../../docs/samples/super-resolution.md)
-- [FidelityFX Naming guidelines](../getting-started/naming-guidelines.md)
+- [AMD FSR™ Upscaling and Frame Generation Sample](../../../../docs/samples/super-resolution.md)
+- [AMD FSR™ Naming guidelines](../getting-started/naming-guidelines.md)

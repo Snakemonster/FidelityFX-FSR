@@ -52,7 +52,7 @@ FFX_FORWARD_DECLARE(FfxInterface);
 /// FidelityFX SDK minor version.
 ///
 /// @ingroup FfxInterface
-#define FFX_SDK_VERSION_MINOR (2)
+#define FFX_SDK_VERSION_MINOR (3)
 
 /// FidelityFX SDK patch version.
 ///

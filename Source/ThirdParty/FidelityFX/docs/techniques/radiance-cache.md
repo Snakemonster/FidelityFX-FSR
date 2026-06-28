@@ -1,4 +1,4 @@
-<!-- @page page_techniques_radiance_cache AMD FSR™ Radiance Caching (Preview) -->
+﻿<!-- @page page_techniques_radiance_cache AMD FSR™ Radiance Caching (Preview) -->
 
 <h1>AMD FSR™ Radiance Caching (Preview)</h1>
 
@@ -6,7 +6,7 @@
 
 **AMD FSR™ Radiance Caching** is a next-generation machine learning model that accelerates the computation of dynamic, physically-based lighting in path-traced games.
 
-<div style="background-color:rgb(255, 249, 220); border-left: 4px solid rgb(224, 157, 0); padding: 10px; margin: 10px 0;"><span style="color: rgb(141, 94, 0);"><strong>⚡ FSR™ Radiance Caching is in technical preview.</strong>  The integration guide and API reference on this page are in active development. Some sections may be incomplete or subject to revision or removal.</div>
+<div style="background-color:rgb(255, 249, 220); border-left: 4px solid rgb(224, 157, 0); padding: 10px; margin: 10px 0;"><span style="color: rgb(141, 94, 0);"><strong>⚡ AMD FSR™ Radiance Caching is in technical preview.</strong>  The integration guide and API reference on this page are in active development. Some sections may be incomplete or subject to revision or removal.</div>
 
 ## Table of contents
 
@@ -26,7 +26,7 @@
 
 ## Introduction
 
-The FSR™ Radiance Cache is a state-of-the-art illumination cache designed to work in tandem with a Monte Carlo path tracer to boost rendering performance and reduce noise. At its core is an online machine learning model that trains continuously to adapt to real-time to dynamic lighting environments. Radiance caching speeds up rendering both by reducing the average depth to which paths are traced, and by sharing information between paths in a manner akin to conventional image denoising.
+The AMD FSR™ Radiance Cache is a state-of-the-art illumination cache designed to work in tandem with a Monte Carlo path tracer to boost rendering performance and reduce noise. At its core is an online machine learning model that trains continuously to adapt to real-time to dynamic lighting environments. Radiance caching speeds up rendering both by reducing the average depth to which paths are traced, and by sharing information between paths in a manner akin to conventional image denoising.
 	
 At each frame, a small set of camera paths are traced into the scene and their estimates used to progressively train a neural network. At the same time, the representation stored in the cache is used as a proxy by the path tracer to avoid tracing unnecessary rays. These processes are complementary, with the path tracer providing data to the cache and the cache reducing the workload on the path tracer.
 
@@ -37,14 +37,14 @@ At each frame, a small set of camera paths are traced into the scene and their e
 
 ## Integration Guide
 
-The guide provides instructions for integrating the FSR™ Radiance Cache into a real-time rendering pipeline. The presented strategy in the following sections is mirrored in the sample implementation code included with this SDK. It should noted from the outset that there is considerable flexibility in how the the cache can be integrated and optimized within its host renderer. The interested reader is encouraged to consult the References and Further Reading sections for more information.
+The guide provides instructions for integrating the AMD FSR™ Radiance Cache into a real-time rendering pipeline. The presented strategy in the following sections is mirrored in the sample implementation code included with this SDK. It should be noted from the outset that there is considerable flexibility in how the cache can be integrated and optimized within its host renderer. The interested reader is encouraged to consult the References and Further Reading sections for more information.
 
 ### Overview
 
 <div align="center"><img src="media/radiance-cache/pipeline-one-pass.png" width="70%"/><br>
 <i>Integrating radiance caching into the rendering pipeline. Query and/or training data emitted by the path tracer is passed to the radiance cache for processing by the model. The resulting outputs are combined with the throughput weight map and added to the output. </i></div><br>
 
-The FSR™ Radiance Cache is invoked via an asynchronous process that interleaves between the path tracing and post-processing passes. The path tracer emits data on which to train together with query data on which to evaluate. These data then dispatched to the SDK via the API. A final compositing step integrates the output from the cache and the path tracer to produce the finished frame.
+The AMD FSR™ Radiance Cache is invoked via an asynchronous process that interleaves between the path tracing and post-processing passes. The path tracer emits data on which to train together with query data on which to evaluate. These data then dispatched to the SDK via the API. A final compositing step integrates the output from the cache and the path tracer to produce the finished frame.
 
 The following sections explain how training data are generated and enqueued and how radiance queries are evaluated and composited. 
 
@@ -146,7 +146,7 @@ In addition to the cache queries, the path tracer also stores the product of all
 
 Self-training is a simple extension that simulates arbitrarily long training paths to by leveraging the cache as its own training proxy. One possible implementation of self-training is as follows:
 
-1. The path tracer is invoked to trace only the set of training paths. At the same time as seeding training data, self-training queries are emplaced at the the terminating vertex of each path. Simultaneously, the product of the throughput weights from the starting vertex of each sample to the terminating vertex of the path are computed and stored.
+1. The path tracer is invoked to trace only the set of training paths. At the same time as seeding training data, self-training queries are emplaced at the terminating vertex of each path. Simultaneously, the product of the throughput weights from the starting vertex of each sample to the terminating vertex of the path are computed and stored.
 2. The radiance cache is invoked in query-only mode, returning predictions of extant radiance for the aforementioned self-training queries. The inferred values are then accumulated into the training targets by multiplying them with their associated throughput weights.
 3. The path tracer is invoked a second time, enqueueing the full set of queries corresponding to each pixel in the viewport. 
 4. The radiance cache is invoked a second time in query + training mode. This populates the prediction buffer with per-pixel radiance estimates and updating the neural network with data from the latest training samples.
@@ -156,7 +156,7 @@ Self-training is a simple extension that simulates arbitrarily long training pat
 
 ### Tuning and Optimization
 
-As an online algorithm, the FSR Radiance Cache represents a departure from contemporary ML-based technologies. Instead of using a pre-trained model, the cache continuously learns from the  of samples emitted by the path tracer. Though this approach allows the cache to respond dynamically to changes in lighting and geometry, it also requires careful tuning so as to maximize performance and minimize unwanted artifacts.
+As an online algorithm, the FSR Radiance Cache represents a departure from contemporary ML-based technologies. Instead of using a pre-trained model, the cache continuously learns from the samples emitted by the path tracer. Though this approach allows the cache to respond dynamically to changes in lighting and geometry, it also requires careful tuning so as to maximize performance and minimize unwanted artifacts.
 
 A prominent drawback of using a path tracer for real-time applications is the high levels of residual noise in rendered outputs. Noise manifests spatially as graininess or blotchiness on the image plane, and temporally as flickering, popping or strobing. In training on sparse, stochastic data the radiance cache is particularly susceptible to temporal noise from one or more of the following sources:
 
@@ -196,7 +196,7 @@ Creating an instance of the radiance cache is done by calling  `ffx::CreateConte
 
  The value of `maxInferenceSampleCount` is typically set to the total number of pixels in target viewport (e.g. 2073660 for 1920 x 1080 resolution.) For engines rendering at multiple resolutions, this value should be a function of the maximum viewport resolution for which radiance cache inference is required.
 
-The value of `maxTrainingSampleCount` is independent of viewport resolution, however it is typically set between 1-5% of the total rendered pixel count. Maximum inference and training counts are used internally by the SDK to determine the number of compute dispatches to enqueue per epoch. The number of valid samples that generated by the path tracer must be defined independency on a per-frame basis by the counters passed to `ffxDispatchDescRadianceCache`. (See [Training the Cache](#placement-in-the-frame").)
+The value of `maxTrainingSampleCount` is independent of viewport resolution, however it is typically set between 1-5% of the total rendered pixel count. Maximum inference and training counts are used internally by the SDK to determine the number of compute dispatches to enqueue per epoch. The number of valid samples generated by the path tracer must be defined independently on a per-frame basis by the counters passed to `ffxDispatchDescRadianceCache`. (See [Training the Cache](#training-the-cache).)
 
 The value of `flags` must be a combination of `ffxApiCreateContextRadianceCacheFlags`, as defined in the following table:
 
@@ -235,6 +235,6 @@ The value of `flags` should be a combination of `ffxApiDispatchRadianceCacheFlag
 
 | Version        | Date              |
 | ---------------|-------------------|
-| **0.9.0**      | 10th December 2025     |
+| **0.9.0**      | 2025-12-10        |
 
 Refer to changelog for more detail on versions.

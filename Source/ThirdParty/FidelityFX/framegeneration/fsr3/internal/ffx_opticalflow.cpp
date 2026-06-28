@@ -479,10 +479,6 @@ static FfxErrorCode opticalflowCreate(FfxOpticalflowContext_Private* context, co
 
     memcpy(&context->contextDescription, contextDescription, sizeof(FfxOpticalflowContextDescription));
 
-    // Check version info - make sure we are linked with the right backend version
-    FfxVersionNumber version = context->contextDescription.backendInterface.fpGetSDKVersion(&context->contextDescription.backendInterface);
-    FFX_RETURN_ON_ERROR(version == FFX_SDK_MAKE_VERSION(FFX_SDK_VERSION_MAJOR, FFX_SDK_VERSION_MINOR, FFX_SDK_VERSION_PATCH), FFX_ERROR_INVALID_VERSION);
-
     errorCode = context->contextDescription.backendInterface.fpCreateBackendContext(&context->contextDescription.backendInterface, FFX_EFFECT_OPTICALFLOW, nullptr, &context->effectContextId);
     FFX_RETURN_ON_ERROR(errorCode == FFX_OK, errorCode);
 
@@ -809,9 +805,7 @@ static FfxErrorCode dispatch(FfxOpticalflowContext_Private* context, const FfxOp
             {
                 {
                     const uint32_t threadGroupSizeX = 32;
-                    const uint32_t threadGroupSizeY = 8;
                     const uint32_t strataWidth = (context->contextDescription.resolution.width / 4) / HistogramsPerDim;
-                    const uint32_t strataHeight = context->contextDescription.resolution.height / HistogramsPerDim;
                     const uint32_t dispatchX = (strataWidth + threadGroupSizeX - 1) / threadGroupSizeX;
                     const uint32_t dispatchY = 16;
                     const uint32_t dispatchZ = HistogramsPerDim * HistogramsPerDim;
@@ -913,11 +907,6 @@ static FfxErrorCode dispatch(FfxOpticalflowContext_Private* context, const FfxOp
                     const uint32_t nextLevelWidth = opticalFlowTextureSizes[level - 1].width;
                     const uint32_t nextLevelHeight = opticalFlowTextureSizes[level - 1].height;
 
-                    const uint32_t threadGroupSizeX = opticalFlowBlockSize / 2;
-                    const uint32_t threadGroupSizeY = opticalFlowBlockSize / 2;
-                    const uint32_t threadGroupSizeZ = 4;
-                    const uint32_t dispatchX = (nextLevelWidth + threadGroupSizeX - 1) / threadGroupSizeX;
-                    const uint32_t dispatchY = (nextLevelHeight + threadGroupSizeY - 1) / threadGroupSizeY;
                     const uint32_t dispatchZ = 1;
                     std::wstring pipelineName = L"OF " + std::to_wstring(level) + L" Scale";
 

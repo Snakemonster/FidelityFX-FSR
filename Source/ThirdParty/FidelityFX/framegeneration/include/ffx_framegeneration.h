@@ -27,7 +27,7 @@
 
 #define FFX_FRAMEGENERATION_VERSION_MAJOR 4
 #define FFX_FRAMEGENERATION_VERSION_MINOR 0
-#define FFX_FRAMEGENERATION_VERSION_PATCH 0
+#define FFX_FRAMEGENERATION_VERSION_PATCH 1
 
 #define FFX_FRAMEGENERATION_MAKE_VERSION(major, minor, patch) (((major) << 22) | ((minor) << 12) | (patch))
 #define FFX_FRAMEGENERATION_VERSION                           FFX_FRAMEGENERATION_MAKE_VERSION(FFX_FRAMEGENERATION_VERSION_MAJOR, FFX_FRAMEGENERATION_VERSION_MINOR, FFX_FRAMEGENERATION_VERSION_PATCH)
@@ -207,7 +207,7 @@ struct FFX_DEPRECATION("ffxDispatchDescFrameGenerationPrepareCameraInfo is depre
 struct ffxQueryDescFrameGenerationGetGPUMemoryUsageV2
 {
     ffxQueryDescHeader              header;                         ///< Description header for GPU memory usage query.
-    void*                           device;                         ///< The GPU device. For DX12: pointer to ID3D12Device. For VK: pointer to VkDevice. App needs to fill out before Query() call.
+    void*                           device;                         ///< The GPU device. For DX12: pointer to ID3D12Device. For VK: pointer to VkDeviceContext. App needs to fill out before Query() call.
     struct FfxApiDimensions2D       maxRenderSize;                  ///< The maximum rendering resolution. App needs to fill out before Query() call.
     struct FfxApiDimensions2D       displaySize;                    ///< The resolution at which both rendered and generated frames will be displayed. App needs to fill out before Query() call.
     uint32_t                        createFlags;                    ///< Context creation flags. A combination of zero or more values from FfxApiCreateContextFramegenerationFlags. App needs to fill out before Query() call.

@@ -52,7 +52,7 @@ struct InternalFgScContext
 // If you change versioning in Id and VersionName, you must also update the DLL
 // version defines in framegeneration/dx12/resource/resource.h
 ffxProvider_Fsr3FrameGenerationSwapChain::ffxProvider_Fsr3FrameGenerationSwapChain()
-: ffxProvider(0xF65C'DD12i64 << 32 | (FFX_SDK_MAKE_VERSION(FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MINOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_PATCH) & 0xFFFF'FFFF),
+    : ffxProvider(0xF65C'DD12ULL << 32 | (FFX_SDK_MAKE_VERSION(FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MINOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_PATCH) & 0xFFFF'FFFF),
               FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN,
               MAKE_VERSION_STRING(FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MINOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_PATCH))
 {
@@ -114,7 +114,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxConte
         *context = internal_context;
         return FFX_API_RETURN_OK;
     }
-    else if (auto desc = ffx::DynamicCast<ffxCreateContextDescFrameGenerationSwapChainNewDX12>(header))
+    else if (auto descNew = ffx::DynamicCast<ffxCreateContextDescFrameGenerationSwapChainNewDX12>(header))
     {
         FfxUInt32 version = 0;
         VERIFY(Fsr3FrameGenerationSwapChainParseVersion(header, version) == FFX_OK, FFX_API_RETURN_ERROR_PARAMETER);
@@ -126,8 +126,8 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxConte
         internal_context->version = version;
 
         FfxSwapchain swapChain;
-        TRY2(ffxCreateFrameinterpolationSwapchainDX12(desc->desc, desc->gameQueue, desc->dxgiFactory, swapChain));
-        internal_context->fiSwapChain = *desc->swapchain = ffxGetDX12SwapchainPtr(swapChain);
+        TRY2(ffxCreateFrameinterpolationSwapchainDX12(descNew->desc, descNew->gameQueue, descNew->dxgiFactory, swapChain));
+        internal_context->fiSwapChain = *descNew->swapchain = ffxGetDX12SwapchainPtr(swapChain);
 
         // reference tracked by internal_context
         internal_context->fiSwapChain->AddRef();
@@ -135,7 +135,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxConte
         *context = internal_context;
         return FFX_API_RETURN_OK;
     }
-    else if (auto desc = ffx::DynamicCast<ffxCreateContextDescFrameGenerationSwapChainForHwndDX12>(header))
+    else if (auto descHwnd = ffx::DynamicCast<ffxCreateContextDescFrameGenerationSwapChainForHwndDX12>(header))
     {
         FfxUInt32 version = 0;
         VERIFY(Fsr3FrameGenerationSwapChainParseVersion(header, version) == FFX_OK, FFX_API_RETURN_ERROR_PARAMETER);
@@ -147,8 +147,8 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxConte
         internal_context->version = version;
 
         FfxSwapchain swapChain;
-        TRY2(ffxCreateFrameinterpolationSwapchainForHwndDX12(desc->hwnd, desc->desc, desc->fullscreenDesc, desc->gameQueue, desc->dxgiFactory, swapChain));
-        internal_context->fiSwapChain = *desc->swapchain = ffxGetDX12SwapchainPtr(swapChain);
+        TRY2(ffxCreateFrameinterpolationSwapchainForHwndDX12(descHwnd->hwnd, descHwnd->desc, descHwnd->fullscreenDesc, descHwnd->gameQueue, descHwnd->dxgiFactory, swapChain));
+        internal_context->fiSwapChain = *descHwnd->swapchain = ffxGetDX12SwapchainPtr(swapChain);
 
         // reference tracked by internal_context
         internal_context->fiSwapChain->AddRef();
@@ -189,9 +189,9 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::Configure(ffxContext* 
 
         return FFX_API_RETURN_OK;
     }
-    else if (auto desc = ffx::DynamicCast<ffxConfigureDescFrameGenerationSwapChainKeyValueDX12>(header))
+    else if (auto descKey = ffx::DynamicCast<ffxConfigureDescFrameGenerationSwapChainKeyValueDX12>(header))
     {
-        TRY2(ffxConfigureFrameInterpolationSwapchainDX12(ffxGetSwapchainDX12(internal_context->fiSwapChain), static_cast <FfxFrameInterpolationSwapchainConfigureKey> (desc->key), desc->ptr));
+        TRY2(ffxConfigureFrameInterpolationSwapchainDX12(ffxGetSwapchainDX12(internal_context->fiSwapChain), static_cast<FfxFrameInterpolationSwapchainConfigureKey>(descKey->key), descKey->ptr));
 
         return FFX_API_RETURN_OK;
     }
@@ -218,43 +218,43 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::Query(ffxContext* cont
 
         return FFX_API_RETURN_OK;
     }
-    else if (auto desc = ffx::DynamicCast<ffxQueryDescFrameGenerationSwapChainInterpolationTextureDX12>(header))
+    else if (auto descTexture = ffx::DynamicCast<ffxQueryDescFrameGenerationSwapChainInterpolationTextureDX12>(header))
     {
         VERIFY(context, FFX_API_RETURN_ERROR_PARAMETER);
         VERIFY(*context, FFX_API_RETURN_ERROR_PARAMETER);
 
         InternalFgScContext* internal_context = reinterpret_cast<InternalFgScContext*>(*context);
-        *desc->pOutTexture = ffxGetFrameinterpolationTextureDX12(ffxGetSwapchainDX12(internal_context->fiSwapChain));
+        *descTexture->pOutTexture = ffxGetFrameinterpolationTextureDX12(ffxGetSwapchainDX12(internal_context->fiSwapChain));
         
         return FFX_API_RETURN_OK;
     }
-    else if (auto desc = ffx::DynamicCast<ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12>(header))
+    else if (auto descMemory = ffx::DynamicCast<ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12>(header))
     {
         VERIFY(context, FFX_API_RETURN_ERROR_PARAMETER);
         VERIFY(*context, FFX_API_RETURN_ERROR_PARAMETER);
-        VERIFY(desc->gpuMemoryUsageFrameGenerationSwapchain, FFX_API_RETURN_ERROR_PARAMETER);
+        VERIFY(descMemory->gpuMemoryUsageFrameGenerationSwapchain, FFX_API_RETURN_ERROR_PARAMETER);
 
-        memset(desc->gpuMemoryUsageFrameGenerationSwapchain, 0, sizeof(FfxApiEffectMemoryUsage));
+        memset(descMemory->gpuMemoryUsageFrameGenerationSwapchain, 0, sizeof(FfxApiEffectMemoryUsage));
 
         InternalFgScContext* internal_context = reinterpret_cast<InternalFgScContext*>(*context);
-        TRY2(ffxFrameInterpolationSwapchainGetGpuMemoryUsageDX12(ffxGetSwapchainDX12(internal_context->fiSwapChain), desc->gpuMemoryUsageFrameGenerationSwapchain));
+        TRY2(ffxFrameInterpolationSwapchainGetGpuMemoryUsageDX12(ffxGetSwapchainDX12(internal_context->fiSwapChain), descMemory->gpuMemoryUsageFrameGenerationSwapchain));
         return FFX_API_RETURN_OK;
     }
-    else if (auto desc = ffx::DynamicCast<ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12V2>(header))
+    else if (auto descMemoryV2 = ffx::DynamicCast<ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12V2>(header))
     {
-        VERIFY(desc->gpuMemoryUsageFrameGenerationSwapchain, FFX_API_RETURN_ERROR_PARAMETER);
+        VERIFY(descMemoryV2->gpuMemoryUsageFrameGenerationSwapchain, FFX_API_RETURN_ERROR_PARAMETER);
 
-        memset(desc->gpuMemoryUsageFrameGenerationSwapchain, 0, sizeof(FfxApiEffectMemoryUsage));
+        memset(descMemoryV2->gpuMemoryUsageFrameGenerationSwapchain, 0, sizeof(FfxApiEffectMemoryUsage));
 
         TRY2(ffxFrameInterpolationSwapchainGetGpuMemoryUsageDX12V2(
-            static_cast<FfxDevice> (desc->device),
-            &(desc->displaySize),
-            (FfxApiSurfaceFormat)desc->backBufferFormat,
-            desc->backBufferCount,
-            &(desc->uiResourceSize),
-            (FfxApiSurfaceFormat)desc->uiResourceFormat,
-            desc->flags,
-            desc->gpuMemoryUsageFrameGenerationSwapchain));
+            static_cast<FfxDevice>(descMemoryV2->device),
+            &(descMemoryV2->displaySize),
+            (FfxApiSurfaceFormat) descMemoryV2->backBufferFormat,
+            descMemoryV2->backBufferCount,
+            &(descMemoryV2->uiResourceSize),
+            (FfxApiSurfaceFormat) descMemoryV2->uiResourceFormat,
+            descMemoryV2->flags,
+            descMemoryV2->gpuMemoryUsageFrameGenerationSwapchain));
         return FFX_API_RETURN_OK;
     }
     else

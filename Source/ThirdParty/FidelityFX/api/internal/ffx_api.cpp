@@ -26,6 +26,7 @@
 #include "../internal/ffx_error.h"
 #include "../internal/ffx_provider.h"
 #include "../internal/ffx_backends.h"
+#include "../internal/ffx_message.h"
 
 static uint64_t GetVersionOverride(const ffxApiHeader* header)
 {
@@ -84,12 +85,28 @@ FFX_API_ENTRY ffxReturnCode_t ffxDestroyContext(ffxContext* context, const ffxAl
     return retCode;
 }
 
-FFX_API_ENTRY ffxReturnCode_t ffxConfigure(ffxContext* context, const ffxConfigureDescHeader* desc)
+FFX_API_ENTRY ffxReturnCode_t ffxConfigure(ffxContext* context, const ffxConfigureDescHeader* header)
 {
-    VERIFY(desc != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
-    VERIFY(context != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
+    VERIFY(header != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
 
-    return GetAssociatedProvider(*context)->Configure(context, desc);
+    if (auto desc = ffx::DynamicCast< ffxConfigureDescGlobalDebug >(header))
+    {
+        ffxSetPrintMessageCallback(reinterpret_cast< ffxMessageCallback >(desc->fpMessage),
+                                   desc->debugLevel);
+        return FFX_API_RETURN_OK;
+    }
+    else if (auto desc1 = ffx::DynamicCast< ffxConfigureDescGlobalDebug1 >(header))
+    {
+        ffxSetPrintMessageCallback(reinterpret_cast< ffxMessageCallback >(desc1->fpMessage),
+                                   desc1->debugLevel);
+        return FFX_API_RETURN_OK;
+    }
+    else
+    {
+        VERIFY(context != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
+
+        return GetAssociatedProvider(*context)->Configure(context, header);
+    }
 }
 
 FFX_API_ENTRY ffxReturnCode_t ffxQuery(ffxContext* context, ffxQueryDescHeader* header)
@@ -121,6 +138,25 @@ FFX_API_ENTRY ffxReturnCode_t ffxQuery(ffxContext* context, ffxQueryDescHeader* 
         else
         {
             retCode = FFX_API_RETURN_NO_PROVIDER;
+            if (GetDevice(header) == nullptr)
+            {
+                const wchar_t* effectName = L"UNKNOWN_EFFECT";
+                uint32_t effectId = static_cast<uint32_t>(header->type & FFX_API_EFFECT_MASK);
+                uint32_t subId = static_cast<uint32_t>(header->type & ~FFX_API_EFFECT_MASK & ~FFX_API_BACKEND_MASK);
+                switch (effectId)
+                {
+                case FFX_API_EFFECT_ID_UPSCALE:                    effectName = L"UPSCALE"; break;
+                case FFX_API_EFFECT_ID_FRAMEGENERATION:            effectName = L"FRAMEGENERATION"; break;
+                case FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN:   effectName = L"FRAMEGENERATIONSWAPCHAIN"; break;
+                }
+                wchar_t msgBuf[512];
+                swprintf_s(msgBuf, 512,
+                    L"ffxQuery with null context returned FFX_API_RETURN_NO_PROVIDER (4) for descriptor type 0x%08llx (%s sub 0x%02x). "
+                    L"No device found in descriptor chain. For null-context queries to reach driver/external providers, "
+                    L"chain an ffxCreateBackendDX12Desc (with device set) via header.pNext.",
+                    static_cast<unsigned long long>(header->type), effectName, subId);
+                FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, msgBuf);
+            }
         }
     }
     else

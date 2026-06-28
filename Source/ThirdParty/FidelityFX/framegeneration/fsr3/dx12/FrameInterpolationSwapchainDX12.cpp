@@ -77,7 +77,7 @@ void InitConfigType<ffxCallbackDescFrameGenerationPresent>(ffxCallbackDescFrameG
 }
 
 template<typename PresentCallbackType>
-void InitPresentCallback(PresentCallbackType& desc, ffxCallbackDescFrameGenerationPresentPremulAlpha& extra, FfxDevice device, FfxCommandList cmdList, bool isInterpolated, FfxApiResource swapChainBuffer, FfxApiResource backBuffer, FfxApiResource currentUI, bool usePremulAlpha, uint64_t frameID)
+void InitPresentCallback(PresentCallbackType& desc, ffxCallbackDescFrameGenerationPresentPremulAlpha&, FfxDevice device, FfxCommandList cmdList, bool isInterpolated, FfxApiResource swapChainBuffer, FfxApiResource backBuffer, FfxApiResource currentUI, bool usePremulAlpha, uint64_t frameID)
 {
     InitConfigType(desc);
     desc.commandList = cmdList;
@@ -133,12 +133,8 @@ FfxABIVersion ffxGetSwapchainABIDX12(FfxSwapchain gameSwapChain)
             {
                 if (gDefaultABIStatus != FfxABIVersion::FFX_ABI_INVALID)
                 {
-                    IDXGISwapChain4* swapChain = reinterpret_cast<IDXGISwapChain4*>(gameSwapChain);
-                    if (swapChain)
-                    {
-                        swapChain->SetPrivateData(IID_AMDFFXABIVersion, sizeof(gDefaultABIStatus), &gDefaultABIStatus);
-                        version = gDefaultABIStatus;
-                    }
+                    swapChain->SetPrivateData(IID_AMDFFXABIVersion, sizeof(gDefaultABIStatus), &gDefaultABIStatus);
+                    version = gDefaultABIStatus;
                 }
             }
             SafeRelease(iFrameInterpolationSwapchain);
@@ -150,12 +146,8 @@ FfxABIVersion ffxGetSwapchainABIDX12(FfxSwapchain gameSwapChain)
             {
                 if (gDefaultABIStatus != FfxABIVersion::FFX_ABI_INVALID)
                 {
-                    IDXGISwapChain4* swapChain = reinterpret_cast<IDXGISwapChain4*>(gameSwapChain);
-                    if (swapChain)
-                    {
-                        swapChain->SetPrivateData(IID_AMDFFXABIVersion, sizeof(gDefaultABIStatus), &gDefaultABIStatus);
-                        version = gDefaultABIStatus;
-                    }
+                    swapChain->SetPrivateData(IID_AMDFFXABIVersion, sizeof(gDefaultABIStatus), &gDefaultABIStatus);
+                    version = gDefaultABIStatus;
                 }
             }
             SafeRelease(frameInterpolationSwapchain);
@@ -164,9 +156,6 @@ FfxABIVersion ffxGetSwapchainABIDX12(FfxSwapchain gameSwapChain)
 
     return version;
 }
-
-#define VERIFY(_cond, msg, _retcode) \
-    if (!(_cond)) FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, msg); return _retcode
 
 struct FfxSwapChainABICaller
 {
@@ -212,7 +201,7 @@ struct FfxSwapChainABICaller
     };
 
     template<typename T>
-    static ID3D12GraphicsCommandList* Call(T* swapChain, FfxGetInterpolationCommandList val)
+    static ID3D12GraphicsCommandList* Call(T* swapChain, FfxGetInterpolationCommandList)
     {
         return swapChain->getInterpolationCommandList();
     }
@@ -223,7 +212,7 @@ struct FfxSwapChainABICaller
     };
 
     template<typename T>
-    static bool Call(T* swapChain, FfxWaitForPresent val)
+    static bool Call(T* swapChain, FfxWaitForPresent)
     {
         return swapChain->waitForPresents();
     }
@@ -918,10 +907,17 @@ DWORD WINAPI interpolationThread(LPVOID param)
 DWORD WINAPI waitableSignalThread(LPVOID param)
 {
     FrameinterpolationPresentInfoExt* presenter = static_cast<FrameinterpolationPresentInfoExt*>(param);
-    while (!presenter->shutdown)
+    presenter->shutdownWaitableSignalThread     = false;
+
+    while (!presenter->shutdownWaitableSignalThread)
     {
         SignalObjectAndWait(presenter->waitableObjectSemaphoreHandle, presenter->frameDoneEventHandle, INFINITE, false);
     }
+
+    // this code only is reached when swapchain gets destroyed
+    // make sure semaphore is not blocking the game
+    ReleaseSemaphore(presenter->waitableObjectSemaphoreHandle, FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2, NULL);
+
     return 0;
 }
 
@@ -934,11 +930,12 @@ HANDLE CreateReplaceableObjectHandle(PresentType* presenter, UINT latency, UINT 
 template<>
 HANDLE CreateReplaceableObjectHandle<FrameinterpolationPresentInfoExt>(FrameinterpolationPresentInfoExt* presenter, UINT latency, UINT bufferCount)
 {
+    // Create internal semaphore and worker thread for frame latency waitable object.
+    // The semaphore will be duplicated when returned to the application via GetFrameLatencyWaitableObject().
     presenter->frameDoneEventHandle          = CreateEvent(0, false, TRUE, nullptr);
     presenter->waitableObjectSemaphoreHandle = CreateSemaphore(0, latency, bufferCount, nullptr);
 
     if (presenter->waitableThreadHandle == NULL) {
-        presenter->shutdown             = false;
         presenter->waitableThreadHandle = CreateThread(nullptr, 0, &waitableSignalThread, reinterpret_cast<void*>(presenter), 0, nullptr);
 
         FFX_ASSERT(presenter->waitableThreadHandle != NULL);
@@ -961,19 +958,23 @@ bool ReleaseReplaceableObjectHandle(PresentType*)
 template<>
 bool ReleaseReplaceableObjectHandle<FrameinterpolationPresentInfoExt>(FrameinterpolationPresentInfoExt* presenter)
 {
+    // Shutdown the SDK's internal waitable object infrastructure.
+    // Note: The application is responsible for closing its duplicated handle(s) obtained
+    // via GetFrameLatencyWaitableObject(). The handle duplication ensures independent
+    // lifetime management - the semaphore object persists until both SDK and app close their handles.
     if (presenter->waitableThreadHandle != NULL) {
 
         // prepare present CPU thread for shutdown
-        presenter->shutdown = true;
+        presenter->shutdownWaitableSignalThread = true;
         // signal event to allow thread to finish
-        SetEvent(presenter->frameDoneEventHandle);
+        SetEvent(presenter->frameDoneEventHandle);  
         // wait for thread function to finish
         WaitForSingleObject(presenter->waitableThreadHandle, INFINITE);
         // close thread
         SafeCloseHandle(presenter->waitableThreadHandle);
     }
 
-    // close event&semaphore handles
+    // close SDK's internal event & semaphore handles
     SafeCloseHandle(presenter->waitableObjectSemaphoreHandle);
     SafeCloseHandle(presenter->frameDoneEventHandle);
 
@@ -1387,7 +1388,7 @@ void TFrameInterpolationSwapChainDX12<ParentType, PresentType, ConfigType, Prese
 }
 
 template<typename PresentCallbackType>
-FfxApiPresentCallbackFunc GetPresentCallbackFunc(FfxApiPresentCallbackFunc presentCallback)
+FfxApiPresentCallbackFunc GetPresentCallbackFunc(FfxApiPresentCallbackFunc)
 {
     return ffxFrameInterpolationUiComposition;
 }
@@ -2445,7 +2446,21 @@ HRESULT STDMETHODCALLTYPE TFrameInterpolationSwapChainDX12<ParentType, PresentTy
 template<typename ParentType, typename PresentType, typename ConfigType, typename PresentCallbackType, size_t NumBuffers>
 HANDLE STDMETHODCALLTYPE TFrameInterpolationSwapChainDX12<ParentType, PresentType, ConfigType, PresentCallbackType, NumBuffers>::GetFrameLatencyWaitableObject(void)
 {
-    return replacementFrameLatencyWaitableObjectHandle;
+    // Duplicate the internal semaphore handle for the application (matches DXGI behavior).
+    // This creates an independent handle with separate reference counting, allowing the SDK
+    // and application to manage handle lifetimes independently without race conditions during shutdown.
+    // Note: The application must close this handle when finished. If called multiple times,
+    // each returned handle is independent and must be closed separately by the application.
+    HANDLE gameWaitableHandle = nullptr;
+    DuplicateHandle(GetCurrentProcess(),
+                    replacementFrameLatencyWaitableObjectHandle,
+                    GetCurrentProcess(),
+                    &gameWaitableHandle,
+                    0,
+                    FALSE,
+                    DUPLICATE_SAME_ACCESS);
+
+    return gameWaitableHandle;
 }
 
 template<typename ParentType, typename PresentType, typename ConfigType, typename PresentCallbackType, size_t NumBuffers>

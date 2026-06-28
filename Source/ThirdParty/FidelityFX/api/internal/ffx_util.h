@@ -193,3 +193,46 @@ inline uint8_t ffxCountBitsSet(uint32_t val) noexcept
     return static_cast<uint8_t>(((c >> 16) + c) & 0x0000FFFF);
 #endif
 }
+
+/// Gets FFX Effect Name
+///
+/// @param [in] effectId FfxEffect.
+///
+/// @return FFX Effect Name
+///
+/// @ingroup Utils
+inline const char* GetEffectName(FfxEffect effectId)
+{
+#define HELPER(_name)      \
+    case FfxEffect::_name: \
+        return #_name;
+    switch (effectId) {
+        HELPER(FFX_EFFECT_FSR2)
+        HELPER(FFX_EFFECT_FSR1)
+        HELPER(FFX_EFFECT_SPD)
+        HELPER(FFX_EFFECT_BLUR)
+        HELPER(FFX_EFFECT_BREADCRUMBS)
+        HELPER(FFX_EFFECT_BRIXELIZER)
+        HELPER(FFX_EFFECT_BRIXELIZER_GI)
+        HELPER(FFX_EFFECT_CACAO)
+        HELPER(FFX_EFFECT_CAS)
+        HELPER(FFX_EFFECT_DENOISER)
+        HELPER(FFX_EFFECT_LENS)
+        HELPER(FFX_EFFECT_PARALLEL_SORT)
+        HELPER(FFX_EFFECT_SSSR)
+        HELPER(FFX_EFFECT_VARIABLE_SHADING)
+        HELPER(FFX_EFFECT_LPM)
+        HELPER(FFX_EFFECT_DOF)
+        HELPER(FFX_EFFECT_CLASSIFIER)
+        HELPER(FFX_EFFECT_FSR3UPSCALER)
+        HELPER(FFX_EFFECT_FRAMEINTERPOLATION)
+        HELPER(FFX_EFFECT_OPTICALFLOW)
+        HELPER(FFX_EFFECT_FSR4UPSCALER)
+        HELPER(FFX_EFFECT_MLFRAMEGENERATION)
+        HELPER(FFX_EFFECT_MLD)
+        HELPER(FFX_EFFECT_NRC)
+    default:
+        return "FFX_UNKNOWN_EFFECT";
+    }
+#undef HELPER
+}

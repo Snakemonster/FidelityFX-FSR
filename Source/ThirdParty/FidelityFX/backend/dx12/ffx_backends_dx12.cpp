@@ -54,11 +54,11 @@ ffxReturnCode_t CreateBackend(const ffxCreateContextDescHeader *desc, bool& back
             }
             backendFound = true;
 
-            const auto *backendDesc = reinterpret_cast<const ffxCreateBackendDX12Desc*>(it);
+            const auto* backendDesc = reinterpret_cast<const ffxCreateBackendDX12Desc*>(it);
+            FFX_RETURN_ON_ERROR(backendDesc->device, FFX_API_RETURN_ERROR_PARAMETER);
             FfxDevice device = ffxGetDeviceDX12(backendDesc->device);
             size_t scratchBufferSize = ffxGetScratchMemorySizeDX12(contexts);
             void* scratchBuffer = alloc.alloc(scratchBufferSize);
-            memset(scratchBuffer, 0, scratchBufferSize);
             TRY2(ffxGetInterfaceDX12(iface, device, scratchBuffer, scratchBufferSize, contexts));
 
             break;
@@ -107,10 +107,6 @@ void* GetDevice(const ffxApiHeader* desc)
         case FFX_API_QUERY_DESC_TYPE_DENOISER_GPU_MEMORY_USAGE:
         {
             return reinterpret_cast<const ffxQueryDescDenoiserGetGPUMemoryUsage*>(it)->device;
-        }
-        case FFX_API_QUERY_DESC_TYPE_DENOISER_GET_VERSION:
-        {
-            return reinterpret_cast<const ffxQueryDescDenoiserGetVersion*>(it)->device;
         }
 #endif //#if defined(FFX_DENOISER)
         case FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12:

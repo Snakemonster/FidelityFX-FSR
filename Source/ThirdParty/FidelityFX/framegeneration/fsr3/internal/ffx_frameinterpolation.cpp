@@ -424,7 +424,7 @@ static void getInternalResourceDescriptions(const FfxApiDimensions2D* maxRenderS
 
 }
 
-static void getSharedResourceDescriptions(const FfxApiDimensions2D* maxRenderSize, const FfxApiDimensions2D* displaySize, FfxFrameInterpolationSharedResourceDescriptions* sharedResourceDescriptions)
+static void getSharedResourceDescriptions(const FfxApiDimensions2D* maxRenderSize, const FfxApiDimensions2D*, FfxFrameInterpolationSharedResourceDescriptions* sharedResourceDescriptions)
 {
     sharedResourceDescriptions->dilatedDepth = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FISHARED_DilatedDepth", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_DILATED_DEPTH, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
@@ -434,7 +434,7 @@ static void getSharedResourceDescriptions(const FfxApiDimensions2D* maxRenderSiz
             FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FISHARED_ReconstructedPrevNearestDepth", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_RECONSTRUCTED_DEPTH_PREVIOUS_FRAME, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 }
 
-static FfxErrorCode fsr3FrameInterpolationDebugCheckCreate(FfxFrameInterpolationContext_Private* contextPrivate, const FfxFrameInterpolationContextDescription* params)
+static FfxErrorCode fsr3FrameInterpolationDebugCheckCreate(FfxFrameInterpolationContext_Private*, const FfxFrameInterpolationContextDescription* params)
 {
     // validate compatibility between backbuffer and hudless formats
     int backBufferGroup = GetFormatPrecisionGroup(params->backBufferFormat);
@@ -468,10 +468,6 @@ static FfxErrorCode frameinterpolationCreate(FfxFrameInterpolationContext_Privat
     context->device = contextDescription->backendInterface.device;
 
     memcpy(&context->contextDescription, contextDescription, sizeof(FfxFrameInterpolationContextDescription));
-
-    // Check version info - make sure we are linked with the right backend version
-    FfxVersionNumber version = context->contextDescription.backendInterface.fpGetSDKVersion(&context->contextDescription.backendInterface);
-    FFX_RETURN_ON_ERROR(version == FFX_SDK_MAKE_VERSION(FFX_SDK_VERSION_MAJOR, FFX_SDK_VERSION_MINOR, FFX_SDK_VERSION_PATCH), FFX_ERROR_INVALID_VERSION);
 
     // Create the context.
     FfxErrorCode errorCode = context->contextDescription.backendInterface.fpCreateBackendContext(&context->contextDescription.backendInterface, FFX_EFFECT_FRAMEINTERPOLATION, nullptr, &context->effectContextId);
@@ -866,7 +862,7 @@ static void setupDeviceDepthToViewSpaceDepthParams(FfxFrameInterpolationContext_
 
     constants->deviceToViewDepth[2] = (1.0f / a);
     constants->deviceToViewDepth[3] = (1.0f / b);
-    
+
 }
 
 FFX_API bool ffxFrameInterpolationResourceIsNull(FfxApiResource resource)
@@ -888,12 +884,12 @@ const size_t debugBarColorSequenceLength = 7;
 static FfxErrorCode fsr3FrameInterpolationDebugCheckDispatch(FfxFrameInterpolationContext_Private* contextPrivate, const FfxFrameInterpolationDispatchDescription* params)
 {
     const bool isUIModeHudless = (params->currentBackBuffer_HUDLess.resource != NULL);
-    if (isUIModeHudless && contextPrivate->contextDescription.previousInterpolationSourceFormat != params->currentBackBuffer_HUDLess.description.format)
+    if (isUIModeHudless && contextPrivate->contextDescription.previousInterpolationSourceFormat != static_cast<FfxApiSurfaceFormat>(params->currentBackBuffer_HUDLess.description.format))
     {
         FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"ffxConfigureDescFrameGeneration::HUDLessColor format have to be same as one of ffxCreateContextDescFrameGeneration::backBufferFormat or ffxCreateContextDescFrameGenerationHudless::hudlessBackBufferFormat. Otherwise, CopyTextureRegion from FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_CURRENT_INTERPOLATION_SOURCE to FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_PREVIOUS_INTERPOLATION_SOURCE would fail.");
         return FFX_API_RETURN_ERROR_PARAMETER;
     }
-    else if (!isUIModeHudless && contextPrivate->contextDescription.previousInterpolationSourceFormat != params->currentBackBuffer.description.format)
+    else if (!isUIModeHudless && contextPrivate->contextDescription.previousInterpolationSourceFormat != static_cast<FfxApiSurfaceFormat>(params->currentBackBuffer.description.format))
     {
         FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"ffxDispatchDescFrameGeneration::presentColor format and ffxCreateContextDescFrameGeneration::backBufferFormat have to be identical. Or ffxConfigureDescFrameGeneration::HUDLessColor have to be valid.");
         return FFX_API_RETURN_ERROR_PARAMETER;

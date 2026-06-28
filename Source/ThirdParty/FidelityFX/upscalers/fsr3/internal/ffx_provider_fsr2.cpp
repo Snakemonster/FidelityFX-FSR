@@ -268,8 +268,6 @@ ffxReturnCode_t ffxProvider_FSR2::Dispatch(ffxContext* context, const ffxDispatc
 
     InternalFsr2Context* internal_context = (InternalFsr2Context*)context[0];
 
-    ffxDispatchDescHeader* descExt = header->pNext;
-
     switch (header->type)
     {
     case FFX_API_DISPATCH_DESC_TYPE_UPSCALE:
