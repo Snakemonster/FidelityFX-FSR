@@ -22,7 +22,7 @@ public class FSREditor : EditorPlugin
             Author = "AMD",
             RepositoryUrl = "https://github.com/FlaxEngine/FSR",
             Description = "This is an FSR plugin project.",
-            Version = new Version(0, 1, 0, 0),
+            Version = new Version(2, 3, 0, 0),
             IsAlpha = true,
         };
     }
