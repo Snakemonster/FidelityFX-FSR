@@ -4,18 +4,21 @@
 #include "Engine/Graphics/GPUDevice.h"
 #include "Engine/Graphics/GPUContext.h"
 #include "Engine/Level/Actors/Camera.h"
+#include "Engine/Graphics/Graphics.h"
 #include "Engine/Graphics/RenderBuffers.h"
+#include "Engine/Graphics/RenderContext.h"
 #include "Engine/Graphics/Textures/GPUTexture.h"
+#include "Engine/Debug/DebugLog.h"
 
 #include "ffx_api.hpp"
 #include "ffx_api_types.h"
 #include "ffx_upscale.hpp"
 #include "dx12/ffx_api_dx12.hpp"
-#include "Engine/Debug/DebugLog.h"
 
 FSRUpscale::FSRUpscale(const SpawnParams& params) 
     : ScriptingObject(params)
-{ }
+{
+}
 
 bool FSRUpscale::Initialize(FSRSupport& support)
 {
@@ -47,9 +50,11 @@ bool FSRUpscale::Initialize(FSRSupport& support)
 
 void FSRUpscale::Shutdown()
 {
+    if (!_ffxContext)
+        return;
     ffx::DestroyContext(_ffxContext);
     _ffxContext = nullptr;
-    this->_upscalerVersions.Clear();
+    _upscalerVersions.Clear();
 }
 
 void FSRUpscale::TemporalResolve(GPUContext* context, RenderContext& renderContext, GPUTexture* input,
@@ -74,7 +79,6 @@ void FSRUpscale::TemporalResolve(GPUContext* context, RenderContext& renderConte
 
     upscale.color = ffxApiGetResourceDX12((ID3D12Resource*)input->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
     upscale.depth = ffxApiGetResourceDX12((ID3D12Resource*)renderContext.Task->Buffers->DepthBuffer->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
-    //TODO this function returns nothing, something wrong with motion vectors
     upscale.motionVectors = ffxApiGetResourceDX12((ID3D12Resource*)(renderContext.Task->Buffers->MotionVectors ? renderContext.Task->Buffers->MotionVectors->GetNativePtr() : nullptr), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
     upscale.output = ffxApiGetResourceDX12((ID3D12Resource*)output->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
 
@@ -92,6 +96,7 @@ void FSRUpscale::TemporalResolve(GPUContext* context, RenderContext& renderConte
     upscale.cameraFar = renderContext.Task->Camera.Get()->GetFarPlane();
     upscale.cameraFovAngleVertical = renderContext.Task->Camera.Get()->GetFieldOfView() * DegreesToRadians;
     upscale.viewSpaceToMetersFactor = 1.0f;
+    if (Graphics::GammaColorSpace) upscale.flags |= FFX_UPSCALE_FLAG_NON_LINEAR_COLOR_SRGB;
 #if BUILD_DEVELOPMENT || BUILD_DEBUG
     if (_debugView) upscale.flags = FFX_UPSCALE_FLAG_DRAW_DEBUG_VIEW;
 #endif
@@ -112,12 +117,12 @@ Array<String> FSRUpscale::GetUpscalerVersions() const
     return result;
 }
 
-String FSRUpscale::GetUpscalerVersion() const
+StringView FSRUpscale::GetUpscalerVersion() const
 {
     return _selectedUpscalerVersion;
 }
 
-void FSRUpscale::SetUpscalerVersion(String newVersion)
+void FSRUpscale::SetUpscalerVersion(StringView newVersion)
 {
     const auto newUpscalerId = _upscalerVersions.TryGet(newVersion);
     if (!newUpscalerId)
@@ -135,14 +140,14 @@ FSRQuality FSRUpscale::GetQuality() const
     return _quality;
 }
 
-void FSRUpscale::SetQuality(const FSRQuality& quality)
+void FSRUpscale::SetQuality(FSRQuality quality)
 {
-    const float selectedRatio = GetUpscaleRatioFromQualityMode(quality);
+    const float selectedRatio = GetUpscaleRatioFromQuality(quality);
     if (selectedRatio == 0.0f) return;
     
     const auto task = MainRenderTask::Instance;
     if (!task) return;
-
+     
     DebugLog::Log(LogType::Info, String::Format(TEXT("[FSR] Selected ratio from quality mode: {}"), selectedRatio));
     task->RenderScale = 1.0f / selectedRatio;
     _quality = quality;
@@ -153,7 +158,7 @@ void FSRUpscale::SetDebugView(bool debugEnabled)
     _debugView = debugEnabled;
 }
 
-float FSRUpscale::GetUpscaleRatioFromQualityMode(const FSRQuality& quality)
+float FSRUpscale::GetUpscaleRatioFromQuality(FSRQuality quality)
 {
     float outRatio;
     ffx::QueryDescUpscaleGetUpscaleRatioFromQualityMode getResolutionRatio;
@@ -231,9 +236,8 @@ void FSRUpscale::FillUpscalerVersions()
     _upscalerVersions.Clear();
     Array<uint64_t> versionIds;
     Array<const char*> versionNames;
-    versionIds.Resize(versionCount);
-    versionNames.Resize(versionCount);
-
+    versionIds.Resize((int32)versionCount);
+    versionNames.Resize((int32)versionCount);
     getAvailableVersions.outputCount = &versionCount;
     getAvailableVersions.versionIds = versionIds.Get();
     getAvailableVersions.versionNames = versionNames.Get();
@@ -249,10 +253,10 @@ void FSRUpscale::FillUpscalerVersions()
         LOG(Error, "[FSR] ffx Query cannot filled arrays");
         return;
     }
-    for (int i = 0; i < versionCount; ++i)
+    for (int32 i = 0; i < versionCount; i++)
     {
         LOG(Info, "[FSR] The versionIds is {}, versionNames is {}", versionIds[i], String(versionNames[i]));
-        this->_upscalerVersions.Add(String(versionNames[i]), versionIds[i]);
+    	_upscalerVersions.Add(String(versionNames[i]), versionIds[i]);
     }
 
     ffxQueryGetProviderVersion getVersion = {0};
