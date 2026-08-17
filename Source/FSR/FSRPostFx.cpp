@@ -3,7 +3,7 @@
 #include "FSR.h"
 #include "Engine/Graphics/GPUContext.h"
 #include "Engine/Graphics/RenderTargetPool.h"
-#include "Engine/Graphics/RenderTask.h"
+#include "Engine/Graphics/RenderContext.h"
 #include "Engine/Graphics/Textures/GPUTexture.h"
 #include "Engine/Profiler/Profiler.h"
 #include "Engine/Renderer/RenderList.h"
@@ -24,9 +24,17 @@ bool FSRPostFx::CanRender(const RenderContext& renderContext) const
 void FSRPostFx::PreRender(GPUContext* context, RenderContext& renderContext)
 {
     if (!CanRender(renderContext)) return;
-    renderContext.List->Setup.UpscaleLocation = RenderingUpscaleLocation::BeforePostProcessingPass;
+
+    // Adjust render setup
+    renderContext.List->Setup.UpscaleLocation = RenderingUpscaleLocation::BeforePostProcessing;
     renderContext.List->Setup.UseTemporalAAJitter = true;
+
+    // Disable AA
     renderContext.List->Settings.AntiAliasing.Mode = AntialiasingMode::None;
+
+    // Render Motion Vectors at full-res
+    renderContext.List->Setup.UseMotionVectors = true;
+    renderContext.List->Settings.MotionBlur.MotionVectorsResolution = ResolutionMode::Full;
 }
 
 void FSRPostFx::Render(GPUContext* context, RenderContext& renderContext, GPUTexture* input, GPUTexture* output)

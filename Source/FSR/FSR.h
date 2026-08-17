@@ -6,6 +6,10 @@
 class FSRUpscale;
 class TestScriptableObj;
 class FSRPostFx;
+
+/// <summary>
+/// FSR plugin
+/// </summary>
 API_CLASS(Namespace="AMD") class FSR_API FSR : public GamePlugin
 {
     friend FSRPostFx;
@@ -16,7 +20,6 @@ public:
     /// </summary>
     API_FIELD(ReadOnly) FSRPostFx* PostFX = nullptr;
 
-protected:
 private:
     FSRUpscale* _fsrUpscale = nullptr;
     FSRSupport _support = FSRSupport::MAX;
@@ -47,8 +50,8 @@ public:
     /// </summary>
     API_FUNCTION() void RemoveUpscaler();
 
+public:
+    // [GamePlugin]
     void Initialize() override;
     void Deinitialize() override;
-protected:
-private:
 };
