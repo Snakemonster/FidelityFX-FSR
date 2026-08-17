@@ -31,6 +31,8 @@ FSRUpscale* FSR::GetUpscale() const
 
 void FSR::ApplyUpscaler()
 {
+    if (PostFX) return;
+
     PostFX = New<FSRPostFx>();
     SceneRenderTask::AddGlobalCustomPostFx(PostFX);
     _fsrUpscale->SetQuality(_fsrUpscale->GetQuality());

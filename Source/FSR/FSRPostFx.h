@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "Engine/Graphics/PostProcessEffect.h"
 
 API_CLASS() class FSR_API FSRPostFx : public PostProcessEffect

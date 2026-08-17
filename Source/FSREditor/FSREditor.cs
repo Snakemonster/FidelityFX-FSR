@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using FlaxEditor;
 using FlaxEditor.Content;
 using FlaxEngine;
@@ -12,6 +11,7 @@ namespace AMD;
 public class FSREditor : EditorPlugin
 {
     private AssetProxy _assetProxy;
+
     /// <inheritdoc/>
     public override void Initialize()
     {
@@ -27,8 +27,10 @@ public class FSREditor : EditorPlugin
         };
     }
 
+    /// <inheritdoc />
     public override Type GamePluginType => typeof(FSR);
 
+    /// <inheritdoc />
     public override void InitializeEditor()
     {
         base.InitializeEditor();
