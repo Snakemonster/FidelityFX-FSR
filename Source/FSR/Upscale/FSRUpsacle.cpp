@@ -72,13 +72,13 @@ void FSRUpscale::TemporalResolve(GPUContext* context, RenderContext& renderConte
     upscale.header.type = FFX_API_DISPATCH_DESC_TYPE_UPSCALE;
     upscale.commandList = (ID3D12GraphicsCommandList*)context->GetNativePtr();
 
+    // ffx::QueryDescUpscaleGetJitterOffset
     upscale.color = ffxApiGetResourceDX12((ID3D12Resource*)input->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
     upscale.depth = ffxApiGetResourceDX12((ID3D12Resource*)renderContext.Task->Buffers->DepthBuffer->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
-    //TODO this function returns nothing, something wrong with motion vectors
     upscale.motionVectors = ffxApiGetResourceDX12((ID3D12Resource*)(renderContext.Task->Buffers->MotionVectors ? renderContext.Task->Buffers->MotionVectors->GetNativePtr() : nullptr), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
-    upscale.output = ffxApiGetResourceDX12((ID3D12Resource*)output->GetNativePtr(), FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+    upscale.output = ffxApiGetResourceDX12((ID3D12Resource*)output->GetNativePtr(), FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
 
-    upscale.jitterOffset = { pixelOffset.X, pixelOffset.Y };
+    upscale.jitterOffset = { -pixelOffset.X, -pixelOffset.Y };
     upscale.motionVectorScale = { static_cast<float>(renderSize.X), static_cast<float>(renderSize.Y) };
     upscale.renderSize = { static_cast<uint32_t>(renderSize.X), static_cast<uint32_t>(renderSize.Y) };
     upscale.upscaleSize = { static_cast<uint32_t>(upscaleSize.X), static_cast<uint32_t>(upscaleSize.Y) };
@@ -182,8 +182,9 @@ void FSRUpscale::UpdateFSRContext()
     createUpscale.flags |= FFX_UPSCALE_ENABLE_DEBUG_CHECKING | FFX_UPSCALE_ENABLE_DEBUG_VISUALIZATION;
     createUpscale.fpMessage = &FSRUpscale::ffxDebugMessage;
 #endif
-    createUpscale.maxRenderSize = FfxApiDimensions2D{3840, 2160};
-    createUpscale.maxUpscaleSize = FfxApiDimensions2D{3840, 2160};
+    const auto screenSize = MainRenderTask::Instance->View.ScreenSize;
+    createUpscale.maxRenderSize = FfxApiDimensions2D{static_cast<uint32_t>(screenSize.X), static_cast<uint32_t>(screenSize.Y)};
+    createUpscale.maxUpscaleSize = FfxApiDimensions2D{static_cast<uint32_t>(screenSize.X), static_cast<uint32_t>(screenSize.Y)};
 
     ffx::CreateContextDescOverrideVersion versionOverride {};
     versionOverride.header.type = FFX_API_DESC_TYPE_OVERRIDE_VERSION;
