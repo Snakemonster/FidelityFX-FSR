@@ -50,7 +50,8 @@ void FSRPostFx::Render(GPUContext* context, RenderContext& renderContext, GPUTex
     }
 
     const auto fsr = FSR::GetInstance();
-    const Float2 pixelOffset(-2.f * renderContext.View.TemporalAAJitter.X / renderContext.View.ScreenSize.X, 2.f * renderContext.View.TemporalAAJitter.X / renderContext.View.ScreenSize.Y);
+    // Flax jitter is a clip-space offset (applied to projection), FSR wants it in render pixels (with Y pointing down)
+    const Float2 pixelOffset(renderContext.View.TemporalAAJitter.X * 0.5f * (float)input->Width(), -renderContext.View.TemporalAAJitter.Y * 0.5f * (float)input->Height());
     fsr->_fsrUpscale->TemporalResolve(context, renderContext, input, fsrOutput, pixelOffset);
     if (fsrOutput != output)
     {

@@ -24,8 +24,10 @@ private:
     bool _debugView = false;
     Dictionary<String, uint64_t> _upscalerVersions;
     String _selectedUpscalerVersion;
-    uint64_t _selectedUpscalerId;
+    uint64_t _selectedUpscalerId = 0;
     FSRQuality _quality = FSRQuality::NativeAA;
+    Int2 _contextSize = Int2::Zero;
+    bool _contextReset = true;
 
 public:
     /// <summary>
@@ -79,7 +81,7 @@ public:
     API_FUNCTION() float GetUpscaleRatioFromQuality(FSRQuality quality);
 
 private:
-    void UpdateFSRContext();
+    void UpdateFSRContext(const Int2& upscaleSize);
     void FillUpscalerVersions();
     static void ffxDebugMessage(uint32_t type, const wchar_t* message);
 };
